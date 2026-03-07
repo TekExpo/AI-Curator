@@ -3,7 +3,8 @@ declare interface IAiCuratorArticleRecommenderWebPartStrings {
   LlmConfigGroupName: string;
   DataSourceGroupName: string;
 
-  LlmEndpointUrlFieldLabel: string;
+  OpenAiModelFieldLabel: string;
+  OpenAiSystemPromptFieldLabel: string;
   MaxArticlesFieldLabel: string;
   EnableCachingFieldLabel: string;
 

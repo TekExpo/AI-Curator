@@ -19,6 +19,12 @@ export interface IArticleRecommendation {
 export interface IAiCuratorArticleRecommenderProps {
   /** The URL of the LLM endpoint */
   llmEndpointUrl: string;
+  /** Optional API key for direct OpenAI or Azure OpenAI calls */
+  openAiApiKey: string;
+  /** Optional model name for public OpenAI chat completions endpoints */
+  openAiModel: string;
+  /** System prompt used when calling an OpenAI-compatible endpoint */
+  openAiSystemPrompt: string;
   /** SharePoint list name containing keyword data */
   listName: string;
   /** Internal column name holding keyword values */

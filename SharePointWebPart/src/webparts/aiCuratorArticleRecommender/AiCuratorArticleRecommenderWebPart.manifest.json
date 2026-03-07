@@ -26,7 +26,8 @@
       },
       "officeFabricIconFontName": "Articles",
       "properties": {
-        "llmEndpointUrl": "",
+        "openAiModel": "gpt-4.1-mini",
+        "openAiSystemPrompt": "You recommend articles based on a list of keywords. Return only valid JSON. The JSON must be an array of objects with this exact schema: [{\"title\":\"string\",\"url\":\"https://example.com\",\"summary\":\"string\"}]. Use real-looking article titles and absolute URLs. Return at most {{maxArticles}} items.",
         "listName": "Articles",
         "keywordColumnName": "Keywords",
         "siteUrl": "",

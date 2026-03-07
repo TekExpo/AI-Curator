@@ -43,8 +43,7 @@ import {
   Icon,
   Separator,
   IStackTokens,
-  IStackItemStyles,
-  mergeStyles
+  IStackItemStyles
 } from '@fluentui/react';
 
 import {
@@ -60,6 +59,14 @@ import styles from './AiCuratorArticleRecommender.module.scss';
 
 const CACHE_KEY_PREFIX = 'ai-curator-cache-';
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const DEFAULT_OPENAI_SYSTEM_PROMPT = [
+  'You recommend articles based on a list of keywords.',
+  'Return only valid JSON.',
+  'The JSON must be an array of objects with this exact schema:',
+  '[{"title":"string","url":"https://example.com","summary":"string"}]',
+  'Use real-looking article titles and absolute URLs.',
+  'Return at most {{maxArticles}} items.'
+].join(' ');
 
 const stackTokens: IStackTokens = { childrenGap: 12 };
 const articleCardStyles: IStackItemStyles = {
@@ -111,6 +118,155 @@ function isValidArticleArray(data: unknown): data is IArticleRecommendation[] {
   );
 }
 
+function normalizeListItemsResponse(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) {
+    return data as Record<string, unknown>[];
+  }
+
+  if (typeof data === 'object' && data !== null) {
+    const directResults = (data as { results?: unknown }).results;
+    if (Array.isArray(directResults)) {
+      return directResults as Record<string, unknown>[];
+    }
+
+    const wrappedResults = (data as { d?: { results?: unknown } }).d?.results;
+    if (Array.isArray(wrappedResults)) {
+      return wrappedResults as Record<string, unknown>[];
+    }
+  }
+
+  return [];
+}
+
+function readSharePointFieldValue(item: Record<string, unknown>, fieldName: string): string {
+  const normalizedFieldName = fieldName.trim();
+  const fieldKeys = Object.keys(item);
+  const matchingKey = fieldKeys.find((key) => key === normalizedFieldName)
+    ?? fieldKeys.find((key) => key.trim() === normalizedFieldName)
+    ?? fieldKeys.find((key) => key.toLowerCase() === normalizedFieldName.toLowerCase());
+
+  if (!matchingKey) {
+    return '';
+  }
+
+  const value = item[matchingKey];
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter((entry): entry is string => typeof entry === 'string')
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0)
+      .join(', ');
+  }
+
+  return '';
+}
+
+function isOpenAiCompatibleEndpoint(endpoint: string): boolean {
+  return /api\.openai\.com|openai\.azure\.com/i.test(endpoint)
+    || endpoint.includes('/chat/completions')
+    || endpoint.includes('/responses');
+}
+
+function buildPromptText(template: string, kwString: string, maxArticles: number): string {
+  return template
+    .replace(/\{\{keywords\}\}/g, kwString)
+    .replace(/\{\{maxArticles\}\}/g, String(maxArticles));
+}
+
+function extractJsonPayload(text: string): string {
+  const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fencedMatch?.[1]?.trim() ?? text.trim();
+
+  const arrayStart = candidate.indexOf('[');
+  const arrayEnd = candidate.lastIndexOf(']');
+  if (arrayStart >= 0 && arrayEnd > arrayStart) {
+    return candidate.substring(arrayStart, arrayEnd + 1);
+  }
+
+  return candidate;
+}
+
+function parseArticleArrayFromText(text: string): IArticleRecommendation[] | null {
+  try {
+    const parsed = JSON.parse(extractJsonPayload(text)) as unknown;
+
+    if (isValidArticleArray(parsed)) {
+      return parsed;
+    }
+
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'articles' in parsed &&
+      isValidArticleArray((parsed as { articles?: unknown }).articles)
+    ) {
+      return (parsed as { articles: IArticleRecommendation[] }).articles;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function parseOpenAiResponse(data: unknown): IArticleRecommendation[] | null {
+  if (isValidArticleArray(data)) {
+    return data;
+  }
+
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'articles' in data &&
+    isValidArticleArray((data as { articles?: unknown }).articles)
+  ) {
+    return (data as { articles: IArticleRecommendation[] }).articles;
+  }
+
+  const chatContent = (data as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  } | null)?.choices?.[0]?.message?.content;
+
+  if (typeof chatContent === 'string') {
+    return parseArticleArrayFromText(chatContent);
+  }
+
+  if (Array.isArray(chatContent)) {
+    const contentText = chatContent
+      .map((part) => {
+        if (typeof part === 'string') {
+          return part;
+        }
+
+        if (typeof part === 'object' && part !== null && 'text' in part) {
+          const text = (part as { text?: unknown }).text;
+          return typeof text === 'string' ? text : '';
+        }
+
+        return '';
+      })
+      .join('');
+
+    if (contentText) {
+      return parseArticleArrayFromText(contentText);
+    }
+  }
+
+  const responsesText = (data as {
+    output?: Array<{ content?: Array<{ text?: string }> }>;
+  } | null)?.output?.[0]?.content?.map((part) => part.text ?? '').join('');
+
+  if (responsesText) {
+    return parseArticleArrayFromText(responsesText);
+  }
+
+  return null;
+}
+
 // ------------------------------------------------------------------
 // Component
 // ------------------------------------------------------------------
@@ -118,6 +274,9 @@ function isValidArticleArray(data: unknown): data is IArticleRecommendation[] {
 const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> = (props) => {
   const {
     llmEndpointUrl,
+    openAiApiKey,
+    openAiModel,
+    openAiSystemPrompt,
     listName,
     keywordColumnName,
     siteUrl,
@@ -142,7 +301,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
     try {
       // Determine which SP site to query.
       // If siteUrl is provided, use it; otherwise, use the current context site.
-      let spQuery = spInstance;
+      const spQuery = spInstance;
 
       if (siteUrl && siteUrl.trim().length > 0) {
         // NOTE: When targetting a different site, PnPjs can use .using(SPFx(...))
@@ -158,11 +317,13 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
 
       // Fetch all items from the list, selecting only the keyword column.
       // We retrieve up to 5000 items (SharePoint list view threshold).
-      const items: Record<string, unknown>[] = await spQuery.web.lists
+      const rawItems = await spQuery.web.lists
         .getByTitle(listName)
         .items
         .select(keywordColumnName)
         .top(5000)();
+
+      const items = normalizeListItemsResponse(rawItems);
 
       if (!items || items.length === 0) {
         return '';
@@ -183,20 +344,25 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
        * represents a topic or category the user is interested in.
        */
       const allKeywords = items
-        .map((item) => {
-          const value = item[keywordColumnName];
-          return typeof value === 'string' ? value.trim() : '';
-        })
+        .map((item) => readSharePointFieldValue(item, keywordColumnName))
         .filter((kw) => kw.length > 0)
         .join(', ');
 
+      if (allKeywords.length === 0) {
+        const sampleKeys = Object.keys(items[0] ?? {}).join(', ');
+        throw new Error(
+          `Items were returned from list "${listName}", but no values were found for column "${keywordColumnName}". ` +
+          `Available fields on the first item: ${sampleKeys || 'none'}`
+        );
+      }
+
       // Deduplicate keywords to reduce payload size
-      const uniqueKeywords = [...new Set(
+      const uniqueKeywords = Array.from(new Set(
         allKeywords
           .split(',')
           .map((k) => k.trim().toLowerCase())
           .filter((k) => k.length > 0)
-      )];
+      ));
 
       return uniqueKeywords.join(', ');
     } catch (err) {
@@ -214,9 +380,17 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
       throw new Error('LLM Endpoint URL is not configured. Please set it in the web part properties.');
     }
 
+    const endpointUrl = llmEndpointUrl.trim();
+    const isOpenAiEndpoint = isOpenAiCompatibleEndpoint(endpointUrl);
+    const resolvedPrompt = buildPromptText(
+      openAiSystemPrompt?.trim().length > 0 ? openAiSystemPrompt.trim() : DEFAULT_OPENAI_SYSTEM_PROMPT,
+      kwString,
+      maxArticles
+    );
+
     // Check cache first
     if (enableCaching) {
-      const cacheKey = CACHE_KEY_PREFIX + hashString(`${kwString}|${maxArticles}`);
+      const cacheKey = CACHE_KEY_PREFIX + hashString(`${endpointUrl}|${openAiModel}|${resolvedPrompt}|${kwString}|${maxArticles}`);
       try {
         const cached = sessionStorage.getItem(cacheKey);
         if (cached) {
@@ -242,29 +416,49 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
      * them (e.g., "language", "userId", "category"). Remember to also add
      * corresponding Property Pane fields and props.
      */
-    const payload = {
-      keywords: kwString,
-      maxResults: maxArticles
+    const userPrompt = [
+      `Keywords: ${kwString}`,
+      `Maximum articles: ${maxArticles}`,
+      'Return article recommendations for these keywords with working URLs and concise summaries.'
+    ].join('\n');
+
+    const payload: Record<string, unknown> = isOpenAiEndpoint
+      ? {
+          messages: [
+            {
+              role: 'system',
+              content: resolvedPrompt
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          temperature: 0.2,
+          ...(openAiModel && openAiModel.trim().length > 0 ? { model: openAiModel.trim() } : {})
+        }
+      : {
+          keywords: kwString,
+          maxResults: maxArticles,
+          prompt: resolvedPrompt
+        };
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     };
 
-    const response = await fetch(llmEndpointUrl.trim(), {
+    if (openAiApiKey && openAiApiKey.trim().length > 0) {
+      if (/openai\.azure\.com/i.test(endpointUrl)) {
+        headers['api-key'] = openAiApiKey.trim();
+      } else {
+        headers.Authorization = `Bearer ${openAiApiKey.trim()}`;
+      }
+    }
+
+    const response = await fetch(endpointUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-        // ---------------------------------------------------------------
-        // AUTHENTICATION:
-        // If your LLM endpoint requires a Bearer token, add it here:
-        //   'Authorization': `Bearer ${yourTokenVariable}`
-        //
-        // For Azure AD-protected endpoints, you can acquire a token using:
-        //   this.context.aadTokenProviderFactory
-        //     .getTokenProvider()
-        //     .then(provider => provider.getToken('your-resource-id'))
-        //
-        // Pass the token through props from the web part class.
-        // ---------------------------------------------------------------
-      },
+      headers,
       body: JSON.stringify(payload),
       signal
     });
@@ -287,9 +481,12 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
       );
     }
 
-    if (!isValidArticleArray(data)) {
+    const parsedArticles = parseOpenAiResponse(data);
+
+    if (!parsedArticles) {
       throw new Error(
-        'LLM response does not match expected schema. Expected: ' +
+        'LLM response does not match expected schema. Expected either a direct array ' +
+        'or an OpenAI chat response containing JSON for ' +
         '[{ "title": string, "url": string, "summary": string }, ...]. ' +
         `Received: ${JSON.stringify(data).substring(0, 300)}`
       );
@@ -297,19 +494,19 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
 
     // Store in cache
     if (enableCaching) {
-      const cacheKey = CACHE_KEY_PREFIX + hashString(`${kwString}|${maxArticles}`);
+      const cacheKey = CACHE_KEY_PREFIX + hashString(`${endpointUrl}|${openAiModel}|${resolvedPrompt}|${kwString}|${maxArticles}`);
       try {
         sessionStorage.setItem(cacheKey, JSON.stringify({
           timestamp: Date.now(),
-          data
+          data: parsedArticles
         }));
       } catch {
         // sessionStorage full or unavailable – silently continue
       }
     }
 
-    return data;
-  }, [llmEndpointUrl, maxArticles, enableCaching]);
+    return parsedArticles;
+  }, [llmEndpointUrl, openAiApiKey, openAiModel, openAiSystemPrompt, maxArticles, enableCaching]);
 
   // ----- Main Data Pipeline -----
   const loadRecommendations = useCallback(async (): Promise<void> => {
@@ -371,7 +568,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         abortControllerRef.current.abort();
       }
     };
-  }, [llmEndpointUrl, listName, keywordColumnName, siteUrl, maxArticles, enableCaching]);
+  }, [llmEndpointUrl, openAiApiKey, openAiModel, openAiSystemPrompt, listName, keywordColumnName, siteUrl, maxArticles, enableCaching]);
 
   // ----- Render Helpers -----
 
@@ -436,8 +633,8 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
       <Icon iconName="Settings" className={styles.configIcon} />
       <Text variant="large">Configure the web part</Text>
       <Text variant="medium" className={styles.configText}>
-        Open the property pane (edit icon) and set the LLM Endpoint URL,
-        SharePoint list name, and keyword column to get started.
+        Open the property pane and set the model, SharePoint list name, and keyword
+        column. The endpoint URL and API key are configured in the web part config file.
       </Text>
     </Stack>
   );

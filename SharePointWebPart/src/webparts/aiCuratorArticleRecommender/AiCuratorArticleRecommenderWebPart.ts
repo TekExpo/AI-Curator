@@ -48,6 +48,7 @@ import '@pnp/sp/lists';
 import '@pnp/sp/items';
 
 import AiCuratorArticleRecommender from './components/AiCuratorArticleRecommender';
+import { aiCuratorArticleRecommenderConfig } from './AiCuratorArticleRecommender.config';
 import { IAiCuratorArticleRecommenderProps } from './components/IAiCuratorArticleRecommenderProps';
 import * as strings from 'AiCuratorArticleRecommenderWebPartStrings';
 
@@ -56,8 +57,10 @@ import * as strings from 'AiCuratorArticleRecommenderWebPartStrings';
  * All fields are persisted in the web part's property bag on the page.
  */
 export interface IAiCuratorArticleRecommenderWebPartProps {
-  /** The URL of the LLM endpoint that returns article recommendations */
-  llmEndpointUrl: string;
+  /** Optional model name for public OpenAI chat completions endpoints */
+  openAiModel: string;
+  /** System prompt used when calling an OpenAI-compatible endpoint */
+  openAiSystemPrompt: string;
   /** The SharePoint list name containing keyword data */
   listName: string;
   /** The internal column name that holds keyword values */
@@ -72,7 +75,7 @@ export interface IAiCuratorArticleRecommenderWebPartProps {
 
 export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWebPart<IAiCuratorArticleRecommenderWebPartProps> {
 
-  private _sp: SPFI;
+  private _sp!: SPFI;
   private _isDarkTheme: boolean = false;
 
   /**
@@ -97,7 +100,10 @@ export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWe
     const element: React.ReactElement<IAiCuratorArticleRecommenderProps> = React.createElement(
       AiCuratorArticleRecommender,
       {
-        llmEndpointUrl: this.properties.llmEndpointUrl,
+        llmEndpointUrl: aiCuratorArticleRecommenderConfig.llmEndpointUrl,
+        openAiApiKey: aiCuratorArticleRecommenderConfig.openAiApiKey,
+        openAiModel: this.properties.openAiModel,
+        openAiSystemPrompt: this.properties.openAiSystemPrompt,
         listName: this.properties.listName,
         keywordColumnName: this.properties.keywordColumnName,
         siteUrl: this.properties.siteUrl,
@@ -137,7 +143,8 @@ export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWe
    * Defines the Property Pane layout with all configurable fields.
    *
    * GROUP 1 – LLM Configuration:
-   *   - LLM Endpoint URL (required)
+  *   - OpenAI Model
+  *   - OpenAI System Prompt
    *   - Max Articles slider
    *   - Enable Caching toggle
    *
@@ -157,11 +164,17 @@ export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWe
             {
               groupName: strings.LlmConfigGroupName,
               groupFields: [
-                PropertyPaneTextField('llmEndpointUrl', {
-                  label: strings.LlmEndpointUrlFieldLabel,
-                  placeholder: 'https://your-llm-api.example.com/recommend',
-                  description: 'The full URL of the LLM endpoint that accepts keyword-based article requests.',
+                PropertyPaneTextField('openAiModel', {
+                  label: strings.OpenAiModelFieldLabel,
+                  placeholder: 'gpt-4.1-mini',
+                  description: 'Required for public OpenAI endpoints. Leave empty for Azure OpenAI deployment URLs that already target a deployment.',
                   multiline: false
+                }),
+                PropertyPaneTextField('openAiSystemPrompt', {
+                  label: strings.OpenAiSystemPromptFieldLabel,
+                  placeholder: 'Return only a JSON array of article recommendations for the provided keywords.',
+                  description: 'System prompt sent to OpenAI-compatible endpoints. The model must return JSON only.',
+                  multiline: true
                 }),
                 PropertyPaneSlider('maxArticles', {
                   label: strings.MaxArticlesFieldLabel,

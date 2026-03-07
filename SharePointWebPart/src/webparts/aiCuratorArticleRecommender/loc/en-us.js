@@ -1,10 +1,11 @@
 define([], function() {
   return {
-    "PropertyPaneDescription": "Configure the AI Curator – Article Recommender web part. Set the LLM endpoint and SharePoint list details to generate AI-powered article recommendations.",
+    "PropertyPaneDescription": "Configure the AI Curator – Article Recommender web part. The endpoint and API key are set in code config; use the property pane for model, prompt, and SharePoint list details.",
     "LlmConfigGroupName": "LLM Configuration",
     "DataSourceGroupName": "SharePoint Data Source",
 
-    "LlmEndpointUrlFieldLabel": "LLM Endpoint URL",
+    "OpenAiModelFieldLabel": "OpenAI Model",
+    "OpenAiSystemPromptFieldLabel": "OpenAI System Prompt",
     "MaxArticlesFieldLabel": "Max Number of Articles",
     "EnableCachingFieldLabel": "Enable Response Caching",
 
