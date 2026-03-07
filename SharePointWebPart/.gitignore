@@ -8,6 +8,7 @@ release
 solution
 temp
 *.sppkg
+.heft
 
 # Coverage reports
 coverage

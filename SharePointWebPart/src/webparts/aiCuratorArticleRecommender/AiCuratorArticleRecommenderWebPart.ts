@@ -3,16 +3,20 @@
  * AI Curator - Article Recommender Web Part
  * ============================================================================
  *
+ * *** HEFT-BASED BUILD (SPFx v1.22.1+) ***
+ * Migrated from legacy Gulp toolchain to modern Heft build rig.
+ * Build rig: @microsoft/spfx-web-build-rig
+ *
  * SPFx Web Part entry point. This class:
  *  - Initializes PnPjs with the SPFx context
  *  - Configures the Property Pane with all user-facing settings
  *  - Renders the React component with the configured properties
  *
- * DEPLOYMENT:
+ * DEPLOYMENT (Heft-based):
  *  1. npm install
- *  2. gulp build
- *  3. gulp bundle --ship
- *  4. gulp package-solution --ship
+ *  2. npm run build              (heft build --clean)
+ *  3. npm run bundle             (heft bundle --production)
+ *  4. npm run package-solution   (heft package-solution --production)
  *  5. Upload the .sppkg from sharepoint/solution/ to your App Catalog
  *  6. Add the web part to a SharePoint page
  *
