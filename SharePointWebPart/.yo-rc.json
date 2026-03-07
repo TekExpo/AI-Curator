@@ -1,0 +1,12 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "solutionName": "ai-curator-article-recommender",
+    "solutionShortDescription": "AI Curator - Article Recommender SPFx web part",
+    "environment": "spo",
+    "isCreatingSolution": true,
+    "packageManager": "npm",
+    "componentType": "webpart",
+    "framework": "react",
+    "isDomainIsolated": false
+  }
+}

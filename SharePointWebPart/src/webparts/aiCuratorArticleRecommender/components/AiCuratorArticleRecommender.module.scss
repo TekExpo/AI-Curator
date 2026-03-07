@@ -1,0 +1,204 @@
+@import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
+
+/* ============================================================================
+ * AI Curator - Article Recommender Styles
+ * 
+ * Uses CSS Modules (*.module.scss) for scoped class names.
+ * Leverages Fluent UI / Office Fabric design tokens where possible.
+ * Fully responsive: stacks vertically on small screens.
+ * ============================================================================ */
+
+.aiCuratorArticleRecommender {
+  overflow: hidden;
+  padding: 16px;
+  color: "[theme:bodyText, default: #323130]";
+  background-color: "[theme:bodyBackground, default: #ffffff]";
+
+  /* Responsive container max-width */
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ----- Container ----- */
+.container {
+  width: 100%;
+}
+
+/* ----- Header ----- */
+.header {
+  padding-bottom: 4px;
+}
+
+.headerIcon {
+  font-size: 24px;
+  color: "[theme:themePrimary, default: #0078d4]";
+}
+
+.title {
+  font-weight: 600;
+  color: "[theme:bodyText, default: #323130]";
+}
+
+.keywordsLabel {
+  color: "[theme:bodySubtext, default: #605e5c]";
+  margin-top: 4px;
+  line-height: 1.4;
+
+  em {
+    color: "[theme:themePrimary, default: #0078d4]";
+    font-style: italic;
+  }
+}
+
+/* ----- Loading ----- */
+.loadingContainer {
+  min-height: 200px;
+  padding: 40px 0;
+}
+
+/* ----- Error & Info Bars ----- */
+.errorBar,
+.infoBar {
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+/* ----- Config Prompt ----- */
+.configPrompt {
+  text-align: center;
+  padding: 48px 24px;
+  min-height: 200px;
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+  border-radius: 8px;
+}
+
+.configIcon {
+  font-size: 48px;
+  color: "[theme:neutralTertiary, default: #a19f9d]";
+  margin-bottom: 12px;
+}
+
+.configText {
+  color: "[theme:bodySubtext, default: #605e5c]";
+  max-width: 400px;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+/* ----- Article Cards ----- */
+.articleList {
+  margin-top: 4px;
+}
+
+.articleCard {
+  border: 1px solid "[theme:neutralLight, default: #edebe9]";
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: "[theme:themePrimary, default: #0078d4]";
+  }
+
+  &:focus-within {
+    border-color: "[theme:themePrimary, default: #0078d4]";
+    outline: 2px solid "[theme:themePrimary, default: #0078d4]";
+    outline-offset: -2px;
+  }
+}
+
+.articleIcon {
+  font-size: 20px;
+  color: "[theme:themePrimary, default: #0078d4]";
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.articleLink {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: "[theme:themePrimary, default: #0078d4]";
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    color: "[theme:themeDarker, default: #004578]";
+  }
+
+  &:focus {
+    outline: 2px solid "[theme:themePrimary, default: #0078d4]";
+    outline-offset: 2px;
+  }
+}
+
+.articleSummary {
+  color: "[theme:bodyText, default: #323130]";
+  line-height: 1.45;
+}
+
+.articleUrl {
+  color: "[theme:bodySubtext, default: #605e5c]";
+  word-break: break-all;
+  opacity: 0.7;
+}
+
+.footerNote {
+  text-align: center;
+  color: "[theme:bodySubtext, default: #605e5c]";
+  padding-top: 8px;
+  opacity: 0.6;
+}
+
+/* ----- Teams context adjustments ----- */
+.teams {
+  padding: 20px;
+}
+
+/* ----- Dark theme adjustments ----- */
+.darkTheme {
+  .articleCard {
+    background-color: "[theme:neutralLight, default: #252423]" !important;
+    border-color: "[theme:neutralQuaternary, default: #3b3a39]";
+  }
+
+  .configPrompt {
+    background-color: "[theme:neutralLight, default: #252423]";
+  }
+
+  .articleUrl {
+    opacity: 0.5;
+  }
+}
+
+/* ----- Responsive ----- */
+@media screen and (max-width: 640px) {
+  .aiCuratorArticleRecommender {
+    padding: 12px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .configPrompt {
+    padding: 32px 16px;
+    min-height: 150px;
+  }
+
+  .configIcon {
+    font-size: 36px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .aiCuratorArticleRecommender {
+    padding: 8px;
+  }
+
+  .headerIcon {
+    display: none;
+  }
+
+  .articleIcon {
+    display: none;
+  }
+}
