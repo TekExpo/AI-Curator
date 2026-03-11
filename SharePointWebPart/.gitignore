@@ -9,7 +9,7 @@ solution
 temp
 *.sppkg
 .heft
-*.config.js.map
+*.config.js
 
 # Coverage reports
 coverage
