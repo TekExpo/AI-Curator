@@ -9,7 +9,6 @@ solution
 temp
 *.sppkg
 .heft
-*.config.js
 
 # Coverage reports
 coverage
@@ -17,6 +16,3 @@ coverage
 # Misc
 .DS_Store
 *.log
-
-# Local config with secrets — never commit this
-src/webparts/aiCuratorArticleRecommender/AiCuratorArticleRecommender.config.ts
