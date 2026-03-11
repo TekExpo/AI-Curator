@@ -2,6 +2,7 @@ declare interface IAiCuratorArticleRecommenderWebPartStrings {
   PropertyPaneDescription: string;
   LlmConfigGroupName: string;
   DataSourceGroupName: string;
+  PersonalizationGroupName: string;
 
   OpenAiModelFieldLabel: string;
   OpenAiSystemPromptFieldLabel: string;
@@ -9,8 +10,10 @@ declare interface IAiCuratorArticleRecommenderWebPartStrings {
   EnableCachingFieldLabel: string;
 
   ListNameFieldLabel: string;
-  KeywordColumnNameFieldLabel: string;
-  SiteUrlFieldLabel: string;
+
+  UserPersonalizationListNameFieldLabel: string;
+  VivaEngageEnabledFieldLabel: string;
+  YammerClientIdFieldLabel: string;
 }
 
 declare module 'AiCuratorArticleRecommenderWebPartStrings' {

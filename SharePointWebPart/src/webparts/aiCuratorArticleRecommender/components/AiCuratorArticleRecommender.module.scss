@@ -2,19 +2,21 @@
 
 /* ============================================================================
  * AI Curator - Article Recommender Styles
- * 
- * Uses CSS Modules (*.module.scss) for scoped class names.
- * Leverages Fluent UI / Office Fabric design tokens where possible.
+ *
+ * Green accent: #107C10 (card borders, titles, icons, selected tabs/chips)
+ * Uses CSS Modules for scoped class names.
  * Fully responsive: stacks vertically on small screens.
  * ============================================================================ */
+
+$green: #107C10;
+$green-light: #e8f5e9;
+$green-border: #c3e6cb;
 
 .aiCuratorArticleRecommender {
   overflow: hidden;
   padding: 16px;
   color: "[theme:bodyText, default: #323130]";
   background-color: "[theme:bodyBackground, default: #ffffff]";
-
-  /* Responsive container max-width */
   max-width: 960px;
   margin: 0 auto;
 }
@@ -31,23 +33,12 @@
 
 .headerIcon {
   font-size: 24px;
-  color: "[theme:themePrimary, default: #0078d4]";
+  color: $green;
 }
 
 .title {
   font-weight: 600;
   color: "[theme:bodyText, default: #323130]";
-}
-
-.keywordsLabel {
-  color: "[theme:bodySubtext, default: #605e5c]";
-  margin-top: 4px;
-  line-height: 1.4;
-
-  em {
-    color: "[theme:themePrimary, default: #0078d4]";
-    font-style: italic;
-  }
 }
 
 /* ----- Loading ----- */
@@ -63,51 +54,30 @@
   margin: 8px 0;
 }
 
-/* ----- Config Prompt ----- */
-.configPrompt {
-  text-align: center;
-  padding: 48px 24px;
-  min-height: 200px;
-  background-color: "[theme:neutralLighter, default: #f3f2f1]";
-  border-radius: 8px;
-}
-
-.configIcon {
-  font-size: 48px;
-  color: "[theme:neutralTertiary, default: #a19f9d]";
-  margin-bottom: 12px;
-}
-
-.configText {
-  color: "[theme:bodySubtext, default: #605e5c]";
-  max-width: 400px;
-  line-height: 1.5;
-  margin-top: 8px;
-}
-
-/* ----- Article Cards ----- */
+/* ----- Article Cards (Tab 2) ----- */
 .articleList {
   margin-top: 4px;
 }
 
 .articleCard {
   border: 1px solid "[theme:neutralLight, default: #edebe9]";
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
-    border-color: "[theme:themePrimary, default: #0078d4]";
+    border-color: $green;
+    box-shadow: 0 2px 8px rgba(16, 124, 16, 0.15);
   }
 
   &:focus-within {
-    border-color: "[theme:themePrimary, default: #0078d4]";
-    outline: 2px solid "[theme:themePrimary, default: #0078d4]";
+    border-color: $green;
+    outline: 2px solid $green;
     outline-offset: -2px;
   }
 }
 
 .articleIcon {
   font-size: 20px;
-  color: "[theme:themePrimary, default: #0078d4]";
+  color: $green;
   margin-top: 2px;
   flex-shrink: 0;
 }
@@ -116,16 +86,16 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1.3;
-  color: "[theme:themePrimary, default: #0078d4]";
+  color: $green;
   text-decoration: none;
 
   &:hover {
     text-decoration: underline;
-    color: "[theme:themeDarker, default: #004578]";
+    color: darken($green, 10%);
   }
 
   &:focus {
-    outline: 2px solid "[theme:themePrimary, default: #0078d4]";
+    outline: 2px solid $green;
     outline-offset: 2px;
   }
 }
@@ -148,6 +118,54 @@
   opacity: 0.6;
 }
 
+/* ----- Tag Chips (Tab 1) ----- */
+.tagChipsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid $green-border;
+  background-color: #ffffff;
+  color: "[theme:bodyText, default: #323130]";
+  transition: all 0.15s ease;
+  user-select: none;
+
+  &:hover {
+    background-color: $green-light;
+    border-color: $green;
+  }
+
+  &:focus {
+    outline: 2px solid $green;
+    outline-offset: 1px;
+  }
+}
+
+.tagChipSelected {
+  background-color: $green;
+  border-color: $green;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(16, 124, 16, 0.3);
+}
+
+.selectedTagsSummary {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: $green-light;
+  border: 1px solid $green-border;
+  margin-top: 8px;
+}
+
 /* ----- Teams context adjustments ----- */
 .teams {
   padding: 20px;
@@ -160,8 +178,10 @@
     border-color: "[theme:neutralQuaternary, default: #3b3a39]";
   }
 
-  .configPrompt {
+  .tagChip {
     background-color: "[theme:neutralLight, default: #252423]";
+    border-color: "[theme:neutralQuaternary, default: #3b3a39]";
+    color: "[theme:bodyText, default: #e1dfdd]";
   }
 
   .articleUrl {
@@ -178,15 +198,6 @@
   .title {
     font-size: 18px;
   }
-
-  .configPrompt {
-    padding: 32px 16px;
-    min-height: 150px;
-  }
-
-  .configIcon {
-    font-size: 36px;
-  }
 }
 
 @media screen and (max-width: 480px) {
@@ -202,3 +213,4 @@
     display: none;
   }
 }
+

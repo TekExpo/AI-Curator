@@ -14,12 +14,18 @@
       "termsOfUseUrl": "",
       "mpnId": "Undefined-1.22.1"
     },
+    "webApiPermissionRequests": [
+      { "resource": "Microsoft Graph", "scope": "Group.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "User.Read" },
+      { "resource": "Microsoft Graph", "scope": "ChannelMessage.Send" },
+      { "resource": "Yammer", "scope": "user_impersonation" }
+    ],
     "metadata": {
       "shortDescription": {
         "default": "AI Curator - Article Recommender"
       },
       "longDescription": {
-        "default": "AI-powered article recommender web part that uses keywords from a SharePoint list to query an LLM endpoint for curated article recommendations."
+        "default": "AI-powered article recommender with tag-based personalization, tabbed UI, and Viva Engage sharing."
       },
       "screenshotPaths": [],
       "videoUrl": "",

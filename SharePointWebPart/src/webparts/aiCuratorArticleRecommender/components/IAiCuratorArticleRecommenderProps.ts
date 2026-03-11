@@ -1,4 +1,3 @@
-import { SPFI } from '@pnp/sp';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 /**
@@ -17,37 +16,33 @@ export interface IArticleRecommendation {
  * Props passed from the web part class to the React component.
  */
 export interface IAiCuratorArticleRecommenderProps {
-  /** The URL of the LLM endpoint */
+  /** The URL of the LLM endpoint (set in config file) */
   llmEndpointUrl: string;
-  /** Optional API key for direct OpenAI or Azure OpenAI calls */
+  /** Optional API key for direct OpenAI or Azure OpenAI calls (set in config file) */
   openAiApiKey: string;
   /** Optional model name for public OpenAI chat completions endpoints */
   openAiModel: string;
   /** System prompt used when calling an OpenAI-compatible endpoint */
   openAiSystemPrompt: string;
-  /** SharePoint list name containing keyword data */
-  listName: string;
-  /** Internal column name holding keyword values */
-  keywordColumnName: string;
-  /** Optional site URL override; empty string = current site */
-  siteUrl: string;
+  /** Display name of the Articles list containing tags */
+  articlesListName: string;
   /** Maximum number of articles to request from the LLM */
   maxArticles: number;
   /** Whether to cache LLM responses in sessionStorage */
   enableCaching: boolean;
-  /** PnPjs SPFI instance initialized with SPFx context */
-  spInstance: SPFI;
+  /** Display name of the userPersonalization list */
+  userPersonalizationListName: string;
+  /** Whether Viva Engage sharing is enabled */
+  vivaEngageEnabled: boolean;
+  /** Yammer App Client ID (only needed for Yammer REST API) */
+  yammerClientId: string;
   /** Whether the current SharePoint theme is dark */
   isDarkTheme: boolean;
   /** Whether the web part is running inside Microsoft Teams */
   hasTeamsContext: boolean;
-  /** The web part context (for pageContext, httpClient, etc.) */
+  /** The web part context (for pageContext, spHttpClient, msGraphClientFactory, etc.) */
   webPartContext: WebPartContext;
 }
-
-/**
- * Internal state managed by the React component via useState hooks.
- */
 export interface IAiCuratorArticleRecommenderState {
   /** The list of article recommendations returned by the LLM */
   articles: IArticleRecommendation[];
