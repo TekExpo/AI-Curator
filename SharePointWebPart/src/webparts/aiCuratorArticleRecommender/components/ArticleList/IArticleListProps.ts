@@ -1,4 +1,4 @@
-import { IArticle } from '../../services/OpenAIService';
+import { IArticle } from '../../services/TopicsService';
 
 export interface IArticleListProps {
   articles: IArticle[];

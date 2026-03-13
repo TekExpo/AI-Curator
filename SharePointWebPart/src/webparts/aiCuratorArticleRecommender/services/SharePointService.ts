@@ -43,36 +43,6 @@ export class SharePointService {
   }
 
   /**
-   * Fetches the Articles list, extracts all Keywords values,
-   * and returns a sorted, deduplicated flat array of tag strings.
-   */
-  public async getTagsFromArticlesList(listName: string): Promise<string[]> {
-    const url =
-      `${this._webUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items` +
-      `?$select=Keywords&$top=5000`;
-    const response: SPHttpClientResponse = await this._spHttpClient.get(
-      url,
-      SPHttpClient.configurations.v1
-    );
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch list "${listName}": HTTP ${response.status}`
-      );
-    }
-    const data = await response.json() as { value?: Array<{ Keywords?: string }> };
-    const items = data.value ?? [];
-    const tagSet = new Set<string>();
-    for (const item of items) {
-      const kw = item.Keywords ?? '';
-      kw.split(',')
-        .map((t) => t.trim().toLowerCase())
-        .filter((t) => t.length > 0)
-        .forEach((t) => tagSet.add(t));
-    }
-    return Array.from(tagSet).sort();
-  }
-
-  /**
    * Queries userPersonalization by numeric UserId.
    * Returns null if no record exists for this user.
    */
@@ -216,6 +186,46 @@ export class SharePointService {
     if (!response.ok && response.status !== 204) {
       throw new Error(
         `Failed to save link in "${listName}" item ${itemId}: HTTP ${response.status}`
+      );
+    }
+  }
+
+  /**
+   * Removes an article URL from SavedLinks (comma-separated).
+   */
+  public async removeSavedLink(
+    listName: string,
+    itemId: number,
+    currentSavedLinks: string,
+    urlToRemove: string
+  ): Promise<void> {
+    const updated = currentSavedLinks
+      .split(',')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && l !== urlToRemove.trim())
+      .join(',');
+
+    const url =
+      `${this._webUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items(${itemId})`;
+    const body = JSON.stringify({ SavedLinks: updated });
+    const response: SPHttpClientResponse = await this._spHttpClient.fetch(
+      url,
+      SPHttpClient.configurations.v1,
+      {
+        method: 'PATCH',
+        headers: {
+          Accept: 'application/json;odata=nometadata',
+          'Content-Type': 'application/json;odata=nometadata',
+          'odata-version': '',
+          'IF-MATCH': '*',
+          'X-HTTP-Method': 'MERGE'
+        },
+        body
+      }
+    );
+    if (!response.ok && response.status !== 204) {
+      throw new Error(
+        `Failed to remove link from "${listName}" item ${itemId}: HTTP ${response.status}`
       );
     }
   }

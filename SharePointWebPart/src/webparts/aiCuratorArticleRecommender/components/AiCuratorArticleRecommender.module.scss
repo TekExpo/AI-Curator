@@ -214,3 +214,31 @@ $green-border: #c3e6cb;
   }
 }
 
+/* ----- Quill rich-text editor (SharePanel) ----- */
+/* quill/dist/quill.snow.css is loaded via require() in SharePanel.tsx */
+:global {
+  /* Fit editor height nicely inside the panel */
+  .ql-container {
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 160px;
+  }
+
+  .ql-editor {
+    min-height: 160px;
+    line-height: 1.6;
+  }
+
+  .ql-toolbar.ql-snow {
+    border-radius: 2px 2px 0 0;
+    border-color: #8a8886;
+    background: #f3f2f1;
+  }
+
+  .ql-container.ql-snow {
+    border-radius: 0 0 2px 2px;
+    border-color: #8a8886;
+    border-top: none;
+  }
+}
+

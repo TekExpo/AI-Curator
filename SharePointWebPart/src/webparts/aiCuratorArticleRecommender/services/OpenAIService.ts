@@ -1,3 +1,7 @@
+// NOTE: OpenAIService is no longer called by AiCuratorArticleRecommender Tab 2.
+// Article recommendations are now fetched from the external articles endpoint via TopicsService.
+// This file is retained for reference only.
+
 export interface IArticle {
   title: string;
   description: string;

@@ -8,9 +8,22 @@ import {
   IconButton,
   TooltipHost
 } from '@fluentui/react';
-import { IArticle } from '../../services/OpenAIService';
+import { IArticle } from '../../services/TopicsService';
 
 const GREEN = '#107C10';
+
+/** Format an ISO date string to a readable short date, e.g. "13 Mar 2026" */
+function formatPublished(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch {
+    return iso;
+  }
+}
 
 interface IArticleCardProps {
   article: IArticle;
@@ -79,11 +92,35 @@ const ArticleCard: React.FC<IArticleCardProps> = (props) => {
           >
             {article.title}
           </Link>
-          {article.description && (
-            <Text variant="small" style={{ color: '#323130', lineHeight: '1.45' }}>
-              {article.description}
+          {article.summary && (
+            <Text
+              variant="small"
+              style={{ color: '#323130', lineHeight: '1.6', whiteSpace: 'pre-line' }}
+            >
+              {article.summary}
             </Text>
           )}
+
+          {/* Source + Published row */}
+          <Stack horizontal tokens={{ childrenGap: 12 }} style={{ flexWrap: 'wrap' }}>
+            {article.source && (
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                <Icon iconName="Globe" style={{ fontSize: 12, color: '#605e5c' }} />
+                <Text variant="tiny" style={{ color: '#605e5c', fontWeight: 600 }}>
+                  {article.source}
+                </Text>
+              </Stack>
+            )}
+            {article.published && (
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                <Icon iconName="Calendar" style={{ fontSize: 12, color: '#605e5c' }} />
+                <Text variant="tiny" style={{ color: '#605e5c' }}>
+                  {formatPublished(article.published)}
+                </Text>
+              </Stack>
+            )}
+          </Stack>
+
           <Text variant="tiny" style={{ color: '#605e5c', wordBreak: 'break-all', opacity: 0.7 }}>
             {displayUrl}
           </Text>
@@ -105,20 +142,18 @@ const ArticleCard: React.FC<IArticleCardProps> = (props) => {
             />
           </TooltipHost>
 
-          {vivaEngageEnabled && (
-            <TooltipHost content="Share to Viva Engage">
-              <IconButton
-                iconProps={{ iconName: 'Share' }}
-                ariaLabel="Share to Viva Engage"
-                onClick={() => onShare(article)}
-                styles={{
-                  root: { color: '#605e5c' },
-                  rootHovered: { color: GREEN },
-                  icon: { fontSize: 16 }
-                }}
-              />
-            </TooltipHost>
-          )}
+          <TooltipHost content="Share to Viva Engage">
+            <IconButton
+              iconProps={{ iconName: 'Share' }}
+              ariaLabel="Share to Viva Engage"
+              onClick={() => onShare(article)}
+              styles={{
+                root: { color: '#605e5c' },
+                rootHovered: { color: GREEN },
+                icon: { fontSize: 16 }
+              }}
+            />
+          </TooltipHost>
         </Stack>
       </Stack>
     </Stack>

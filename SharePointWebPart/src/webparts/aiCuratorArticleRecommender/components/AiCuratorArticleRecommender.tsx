@@ -7,15 +7,15 @@
  *
  * TAB FLOW:
  *  Tab 1 – My Interests:
- *    1. Fetch all tags from Articles list (Keywords column)
- *    2. Fetch current user's userPersonalization record (filter by UserId)
- *    3. Pre-select tags stored in SelectedTags
- *    4. On "Save My Interests" → upsert userPersonalization → switch to Tab 2
+ *    1. User searches for topics via the external suggest-topics API.
+ *    2. Fetch current user's userPersonalization record (filter by UserId).
+ *    3. Pre-select chips that match saved SelectedTags.
+ *    4. On "Save My Interests" → upsert userPersonalization → switch to Tab 2.
  *
  *  Tab 2 – Recommended Articles:
  *    1. GET /_api/web/currentUser → numeric Id
  *    2. Query userPersonalization WHERE UserId eq {id}
- *    3. Extract SelectedTags → pass directly to OpenAI service
+ *    3. Extract SelectedTags → call external articles API
  *    4. Render article cards with Save & Share actions
  *
  * KEYWORDS SOURCE: Always and only from userPersonalization.SelectedTags.
@@ -30,19 +30,23 @@ import {
   Stack,
   Text,
   Icon,
+  Link,
   Separator,
   Pivot,
   PivotItem,
   MessageBar,
-  MessageBarType
+  MessageBarType,
+  Spinner,
+  SpinnerSize,
+  IconButton,
+  TooltipHost
 } from '@fluentui/react';
 
 import { IAiCuratorArticleRecommenderProps } from './IAiCuratorArticleRecommenderProps';
 import { IAiCuratorArticleRecommenderState } from './IAiCuratorArticleRecommenderState';
-import { IArticle, OpenAIService } from '../services/OpenAIService';
+import { IArticle, TopicsService } from '../services/TopicsService';
 import { SharePointService } from '../services/SharePointService';
 import { VivaEngageService, IYammerGroup } from '../services/VivaEngageService';
-import { aiCuratorArticleRecommenderConfig } from '../AiCuratorArticleRecommender.config';
 
 import TagSelector from './TagSelector/TagSelector';
 import ArticleList from './ArticleList/ArticleList';
@@ -56,11 +60,11 @@ import styles from './AiCuratorArticleRecommender.module.scss';
 
 const TAB_INTERESTS = 'tab1';
 const TAB_ARTICLES = 'tab2';
+const TAB_SAVED = 'tab3';
 
 const INITIAL_STATE: IAiCuratorArticleRecommenderState = {
-  activeTab: TAB_INTERESTS,
-  availableTags: [],
-  selectedTags: [],
+  activeTab: TAB_ARTICLES,
+  savedTags: '',
   isLoadingTags: false,
   tab1Error: '',
   tab1Success: '',
@@ -70,6 +74,7 @@ const INITIAL_STATE: IAiCuratorArticleRecommenderState = {
   tab2Info: '',
   sharePanelArticleUrl: '',
   sharePanelArticleTitle: '',
+  sharePanelArticleSummary: '',
   userPersonalizationItemId: null,
   currentUserId: null,
   currentUserLoginName: '',
@@ -82,11 +87,6 @@ const INITIAL_STATE: IAiCuratorArticleRecommenderState = {
 
 const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> = (props) => {
   const {
-    openAiModel,
-    openAiSystemPrompt,
-    articlesListName,
-    maxArticles,
-    enableCaching,
     userPersonalizationListName,
     vivaEngageEnabled,
     isDarkTheme,
@@ -96,18 +96,17 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
 
   // ── Services ───────────────────────────────────────────────────────────────
   const spService = useRef(new SharePointService(webPartContext));
-  const openAiServiceRef = useRef(
-    new OpenAIService(
-      aiCuratorArticleRecommenderConfig.llmEndpointUrl,
-      aiCuratorArticleRecommenderConfig.openAiApiKey
-    )
-  );
+  const topicsServiceRef = useRef(new TopicsService());
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [state, setState] = useState<IAiCuratorArticleRecommenderState>(INITIAL_STATE);
   const [isSavingTags, setIsSavingTags] = useState(false);
   const [yammerGroups, setYammerGroups] = useState<IYammerGroup[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [yammerGroupsError, setYammerGroupsError] = useState('');
+  const [isLoadingSavedLinks, setIsLoadingSavedLinks] = useState(false);
+  const [tab3Error, setTab3Error] = useState('');
+  const [removingUrl, setRemovingUrl] = useState('');
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -118,26 +117,17 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
     []
   );
 
-  // ── Tab 1: load available tags + pre-select existing user tags ──────────────
+  // ── Tab 1: load current user + saved tags from userPersonalization ───────────
   const loadTab1Data = useCallback(async (): Promise<void> => {
     patchState({ isLoadingTags: true, tab1Error: '', tab1Success: '' });
     try {
-      const [availableTags, currentUser] = await Promise.all([
-        spService.current.getTagsFromArticlesList(articlesListName),
-        spService.current.getCurrentUser()
-      ]);
+      const currentUser = await spService.current.getCurrentUser();
       const record = await spService.current.getUserPersonalizationByUserId(
         userPersonalizationListName,
         currentUser.Id
       );
-      const preSelected =
-        record?.SelectedTags
-          ?.split(',')
-          .map((t) => t.trim().toLowerCase())
-          .filter((t) => t.length > 0) ?? [];
       patchState({
-        availableTags,
-        selectedTags: preSelected,
+        savedTags: record?.SelectedTags ?? '',
         isLoadingTags: false,
         currentUserId: currentUser.Id,
         currentUserLoginName: currentUser.LoginName,
@@ -148,9 +138,9 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
       const msg = err instanceof Error ? err.message : String(err);
       patchState({ isLoadingTags: false, tab1Error: msg });
     }
-  }, [articlesListName, userPersonalizationListName, patchState]);
+  }, [userPersonalizationListName, patchState]);
 
-  // ── Tab 2: fetch OpenAI recommendations for current user ───────────────────
+  // ── Tab 2: fetch article recommendations for current user ──────────────────
   const loadTab2Data = useCallback(async (): Promise<void> => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -171,7 +161,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
           patchState({
             isLoadingArticles: false,
             tab2Info:
-              'No interests saved yet. Go to the My Interests tab to select your tags.'
+              'No interests saved yet. Go to the My Interests tab to select your topics.'
           });
         }
         return;
@@ -183,7 +173,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
           patchState({
             isLoadingArticles: false,
             tab2Info:
-              'Your interests list is empty. Please select tags in the My Interests tab.'
+              'Your interests list is empty. Please select topics in the My Interests tab.'
           });
         }
         return;
@@ -196,30 +186,58 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         savedLinks: record.SavedLinks ?? ''
       });
 
-      const articles = await openAiServiceRef.current.getArticleRecommendations(
-        tags,
-        openAiModel,
-        openAiSystemPrompt,
-        maxArticles,
-        enableCaching,
-        controller.signal
-      );
+      const articles = await topicsServiceRef.current.getArticles(tags, 20);
 
       if (!controller.signal.aborted) {
-        patchState({ isLoadingArticles: false, articles });
+        if (articles.length === 0) {
+          patchState({
+            isLoadingArticles: false,
+            tab2Info: 'No articles found for your selected topics. Try updating your interests.'
+          });
+        } else {
+          patchState({ isLoadingArticles: false, articles });
+        }
       }
     } catch (err) {
       if (!controller.signal.aborted) {
-        const msg = err instanceof Error ? err.message : String(err);
-        patchState({ isLoadingArticles: false, tab2Error: msg });
+        patchState({
+          isLoadingArticles: false,
+          tab2Error: 'Unable to fetch articles. Please try again later.'
+        });
       }
     }
-  }, [userPersonalizationListName, openAiModel, openAiSystemPrompt, maxArticles, enableCaching, patchState]);
+  }, [userPersonalizationListName, patchState]);
+
+  // ── Tab 3: refresh SavedLinks from userPersonalization ────────────────────
+  const refreshSavedLinks = useCallback(async (): Promise<void> => {
+    setIsLoadingSavedLinks(true);
+    setTab3Error('');
+    try {
+      let userId = state.currentUserId;
+      if (!userId) {
+        const user = await spService.current.getCurrentUser();
+        userId = user.Id;
+        patchState({ currentUserId: user.Id, currentUserLoginName: user.LoginName });
+      }
+      const record = await spService.current.getUserPersonalizationByUserId(
+        userPersonalizationListName,
+        userId
+      );
+      patchState({
+        savedLinks: record?.SavedLinks ?? '',
+        userPersonalizationItemId: record?.itemId ?? null
+      });
+    } catch (err) {
+      setTab3Error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsLoadingSavedLinks(false);
+    }
+  }, [state.currentUserId, userPersonalizationListName, patchState]);
 
   // ── Mount: load Tab 1 data ─────────────────────────────────────────────────
   useEffect(() => {
-    loadTab1Data().catch((err) =>
-      console.error('AI Curator: Failed to load Tab 1 data', err)
+    loadTab2Data().catch((err) =>
+      console.error('AI Curator: Failed to load Tab 2 data', err)
     );
     return () => {
       if (abortControllerRef.current) {
@@ -233,32 +251,27 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
   const handleTabChange = useCallback(
     (item?: PivotItem): void => {
       if (!item) return;
-      const key = item.props.itemKey ?? TAB_INTERESTS;
+      const key = item.props.itemKey ?? TAB_ARTICLES;
       patchState({ activeTab: key });
       if (key === TAB_ARTICLES) {
         loadTab2Data().catch((err) =>
           console.error('AI Curator: Failed to load Tab 2 data', err)
         );
+      } else if (key === TAB_SAVED) {
+        refreshSavedLinks().catch((err) =>
+          console.error('AI Curator: Failed to refresh saved links', err)
+        );
+      } else if (key === TAB_INTERESTS) {
+        loadTab1Data().catch((err) =>
+          console.error('AI Curator: Failed to load Tab 1 data', err)
+        );
       }
     },
-    [loadTab2Data, patchState]
+    [loadTab1Data, loadTab2Data, refreshSavedLinks, patchState]
   );
 
-  // ── Tag chip toggle ────────────────────────────────────────────────────────
-  const handleTagToggle = useCallback((tag: string): void => {
-    setState((prev) => {
-      const isSelected = prev.selectedTags.includes(tag);
-      return {
-        ...prev,
-        selectedTags: isSelected
-          ? prev.selectedTags.filter((t) => t !== tag)
-          : [...prev.selectedTags, tag]
-      };
-    });
-  }, []);
-
   // ── Save Interests (upsert userPersonalization) ────────────────────────────
-  const handleSaveInterests = useCallback(async (): Promise<void> => {
+  const handleSaveInterests = useCallback(async (selectedTags: string[]): Promise<void> => {
     setIsSavingTags(true);
     patchState({ tab1Error: '', tab1Success: '' });
     try {
@@ -270,7 +283,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         loginName = user.LoginName;
         patchState({ currentUserId: userId, currentUserLoginName: loginName });
       }
-      const tagsString = state.selectedTags.join(', ');
+      const tagsString = selectedTags.join(', ');
       if (state.userPersonalizationItemId) {
         await spService.current.updateSelectedTags(
           userPersonalizationListName,
@@ -286,7 +299,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         );
         patchState({ userPersonalizationItemId: created.itemId });
       }
-      patchState({ tab1Success: 'Your interests have been saved successfully!' });
+      patchState({ tab1Success: 'Your interests have been saved successfully!', savedTags: tagsString });
       setTimeout(() => {
         patchState({ activeTab: TAB_ARTICLES, tab1Success: '' });
         loadTab2Data().catch((err) =>
@@ -299,7 +312,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
     } finally {
       setIsSavingTags(false);
     }
-  }, [state, userPersonalizationListName, loadTab2Data, patchState]);
+  }, [state.currentUserId, state.currentUserLoginName, state.userPersonalizationItemId, userPersonalizationListName, loadTab2Data, patchState]);
 
   // ── Save article link ──────────────────────────────────────────────────────
   const handleSaveArticle = useCallback(
@@ -325,29 +338,63 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
     [state.userPersonalizationItemId, state.savedLinks, userPersonalizationListName, patchState]
   );
 
+  // ── Remove saved link ──────────────────────────────────────────────────────
+  const handleRemoveSavedLink = useCallback(
+    async (url: string): Promise<void> => {
+      const itemId = state.userPersonalizationItemId;
+      if (!itemId) return;
+      setRemovingUrl(url);
+      try {
+        await spService.current.removeSavedLink(
+          userPersonalizationListName,
+          itemId,
+          state.savedLinks,
+          url
+        );
+        const updated = state.savedLinks
+          .split(',')
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0 && l !== url)
+          .join(',');
+        patchState({ savedLinks: updated });
+      } catch (err) {
+        setTab3Error(err instanceof Error ? err.message : String(err));
+      } finally {
+        setRemovingUrl('');
+      }
+    },
+    [state.userPersonalizationItemId, state.savedLinks, userPersonalizationListName, patchState]
+  );
+
   // ── Share panel ────────────────────────────────────────────────────────────
+  const loadYammerGroups = useCallback((): void => {
+    setIsLoadingGroups(true);
+    setYammerGroupsError('');
+    webPartContext.msGraphClientFactory
+      .getClient('3')
+      .then((graphClient) => new VivaEngageService(graphClient).getYammerGroups())
+      .then((groups) => {
+        setYammerGroups(groups);
+        setIsLoadingGroups(false);
+      })
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        setYammerGroupsError(msg);
+        setIsLoadingGroups(false);
+      });
+  }, [webPartContext]);
+
   const handleShareArticle = useCallback(
     (article: IArticle): void => {
       patchState({
         sharePanelArticleUrl: article.url,
-        sharePanelArticleTitle: article.title
+        sharePanelArticleTitle: article.title,
+        sharePanelArticleSummary: article.summary ?? ''
       });
-      if (vivaEngageEnabled && yammerGroups.length === 0 && !isLoadingGroups) {
-        setIsLoadingGroups(true);
-        webPartContext.msGraphClientFactory
-          .getClient('3')
-          .then((graphClient) => new VivaEngageService(graphClient).getYammerGroups())
-          .then((groups) => {
-            setYammerGroups(groups);
-            setIsLoadingGroups(false);
-          })
-          .catch((err) => {
-            console.error('AI Curator: Failed to fetch Viva Engage groups', err);
-            setIsLoadingGroups(false);
-          });
-      }
+      // Always (re-)fetch groups when the panel opens so stale/failed state is cleared
+      loadYammerGroups();
     },
-    [vivaEngageEnabled, yammerGroups.length, isLoadingGroups, webPartContext, patchState]
+    [loadYammerGroups, patchState]
   );
 
   const handlePostToVivaEngage = useCallback(
@@ -402,29 +449,6 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
             }
           }}
         >
-          <PivotItem headerText="My Interests" itemKey={TAB_INTERESTS} itemIcon="Tag">
-            {state.tab1Error && (
-              <MessageBar
-                messageBarType={MessageBarType.error}
-                isMultiline
-                onDismiss={() => patchState({ tab1Error: '' })}
-                style={{ marginTop: 8, marginBottom: 4 }}
-              >
-                {state.tab1Error}
-              </MessageBar>
-            )}
-            <TagSelector
-              availableTags={state.availableTags}
-              selectedTags={state.selectedTags}
-              isLoading={state.isLoadingTags}
-              errorMessage={''}
-              successMessage={state.tab1Success}
-              onTagToggle={handleTagToggle}
-              onSave={() => { void handleSaveInterests(); }}
-              isSaving={isSavingTags}
-            />
-          </PivotItem>
-
           <PivotItem headerText="Recommended Articles" itemKey={TAB_ARTICLES} itemIcon="Lightbulb">
             <ArticleList
               articles={state.articles}
@@ -437,6 +461,101 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
               vivaEngageEnabled={vivaEngageEnabled}
             />
           </PivotItem>
+
+          <PivotItem headerText="My Saved Links" itemKey={TAB_SAVED} itemIcon="FavoriteStar">
+            {tab3Error && (
+              <MessageBar
+                messageBarType={MessageBarType.error}
+                isMultiline
+                onDismiss={() => setTab3Error('')}
+                style={{ marginTop: 8, marginBottom: 4 }}
+              >
+                {tab3Error}
+              </MessageBar>
+            )}
+            {isLoadingSavedLinks ? (
+              <Stack horizontalAlign="center" style={{ padding: 40 }}>
+                <Spinner size={SpinnerSize.large} label="Loading saved links…" labelPosition="bottom" />
+              </Stack>
+            ) : savedArticleUrls.length === 0 ? (
+              <Stack horizontalAlign="center" tokens={{ childrenGap: 8 }} style={{ padding: '40px 16px' }}>
+                <Icon iconName="FavoriteStar" style={{ fontSize: 36, color: '#c8c6c4' }} />
+                <Text variant="mediumPlus" style={{ color: '#605e5c', fontWeight: 600 }}>No saved links yet</Text>
+                <Text variant="small" style={{ color: '#a19f9d', textAlign: 'center' }}>
+                  Articles you save from the Recommended Articles tab will appear here.
+                </Text>
+              </Stack>
+            ) : (
+              <Stack tokens={{ childrenGap: 8 }} style={{ marginTop: 12 }}>
+                <Text variant="small" style={{ color: '#605e5c', marginBottom: 4 }}>
+                  {savedArticleUrls.length} saved {savedArticleUrls.length === 1 ? 'link' : 'links'}
+                </Text>
+                {savedArticleUrls.map((url, i) => (
+                  <Stack
+                    key={`saved-${i}-${url}`}
+                    horizontal
+                    verticalAlign="center"
+                    tokens={{ childrenGap: 10 }}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #edebe9',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    <Icon iconName="Link" style={{ fontSize: 16, color: '#107C10', flexShrink: 0 }} />
+                    <Link
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ flexGrow: 1, wordBreak: 'break-all', color: '#107C10', fontSize: 13 }}
+                    >
+                      {url}
+                    </Link>
+                    <TooltipHost content="Remove link">
+                      <IconButton
+                        iconProps={{ iconName: 'Delete' }}
+                        ariaLabel="Remove saved link"
+                        disabled={removingUrl === url}
+                        onClick={() => { void handleRemoveSavedLink(url); }}
+                        styles={{
+                          root: { color: '#605e5c', flexShrink: 0 },
+                          rootHovered: { color: '#a4262c' },
+                          icon: { fontSize: 14 }
+                        }}
+                      />
+                    </TooltipHost>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+          </PivotItem>
+
+          <PivotItem headerText="My Interests" itemKey={TAB_INTERESTS} itemIcon="Tag">
+            {state.tab1Error && (
+              <MessageBar
+                messageBarType={MessageBarType.error}
+                isMultiline
+                onDismiss={() => patchState({ tab1Error: '' })}
+                style={{ marginTop: 8, marginBottom: 4 }}
+              >
+                {state.tab1Error}
+              </MessageBar>
+            )}
+            {state.isLoadingTags ? (
+              <Stack horizontalAlign="center" style={{ padding: 40 }}>
+                <Spinner size={SpinnerSize.large} label="Loading your interests…" labelPosition="bottom" />
+              </Stack>
+            ) : (
+              <TagSelector
+                savedTags={state.savedTags}
+                successMessage={state.tab1Success}
+                onSave={(tags) => { void handleSaveInterests(tags); }}
+                isSaving={isSavingTags}
+              />
+            )}
+          </PivotItem>
         </Pivot>
       </Stack>
 
@@ -444,9 +563,12 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         isOpen={sharePanelIsOpen}
         articleUrl={state.sharePanelArticleUrl}
         articleTitle={state.sharePanelArticleTitle}
+        articleSummary={state.sharePanelArticleSummary}
         groups={yammerGroups}
         isLoadingGroups={isLoadingGroups}
-        onDismiss={() => patchState({ sharePanelArticleUrl: '', sharePanelArticleTitle: '' })}
+        groupLoadError={yammerGroupsError}
+        onRetryLoadGroups={loadYammerGroups}
+      onDismiss={() => patchState({ sharePanelArticleUrl: '', sharePanelArticleTitle: '', sharePanelArticleSummary: '' })}
         onPost={handlePostToVivaEngage}
       />
     </section>

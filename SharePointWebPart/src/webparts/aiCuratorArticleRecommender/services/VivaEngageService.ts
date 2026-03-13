@@ -17,16 +17,17 @@ export class VivaEngageService {
   }
 
   /**
-   * Returns Yammer / Viva Engage groups the current user belongs to.
-   * Uses the Microsoft Graph /me/joinedGroups endpoint.
+   * Returns Viva Engage communities the current user belongs to.
+   * Filters M365 groups to those provisioned with a Yammer/Viva Engage backend.
    */
   public async getYammerGroups(): Promise<IYammerGroup[]> {
     try {
-      // Fetch groups that the user is a member of via Graph
+      // Filter M365 groups to only those backed by Viva Engage (Yammer)
       const result = await this._graphClient
-        .api('/me/joinedGroups')
+        .api('/groups')
+        .filter("resourceProvisioningOptions/Any(x:x eq 'Yammer')")
         .select('id,displayName')
-        .top(50)
+        .top(100)
         .get() as {
           value?: Array<{ id: string; displayName: string }>;
         };
@@ -35,7 +36,7 @@ export class VivaEngageService {
       return groups.map((g) => ({ id: g.id, name: g.displayName }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(`Failed to fetch Viva Engage groups: ${msg}`);
+      throw new Error(`Failed to fetch Viva Engage communities: ${msg}`);
     }
   }
 
@@ -46,27 +47,31 @@ export class VivaEngageService {
   public async postToGroup(
     groupId: string,
     articleUrl: string,
-    userComments: string
+    descriptionHtml: string
   ): Promise<void> {
-    const bodyContent = [
-      userComments?.trim().length > 0 ? userComments.trim() : '',
-      articleUrl,
-      'Shared via AI Curator – Article Recommender'
-    ]
-      .filter((line) => line.length > 0)
-      .join('\n\n');
+    // Build the HTML body: rich-text description + article link + attribution
+    const safeUrl = articleUrl
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    const htmlContent =
+      (descriptionHtml?.trim() || '') +
+      `<p><a href="${safeUrl}">${safeUrl}</a></p>` +
+      '<p><em>Shared via AI Curator \u2013 Article Recommender</em></p>';
 
     try {
       await this._graphClient
         .api(`/groups/${groupId}/threads`)
         .post({
-          topic: 'AI Curator – Shared Article',
+          topic: 'AI Curator \u2013 Shared Article',
           posts: [
             {
               post: {
                 body: {
-                  contentType: 'text',
-                  content: bodyContent
+                  contentType: 'html',
+                  content: htmlContent
                 }
               }
             }

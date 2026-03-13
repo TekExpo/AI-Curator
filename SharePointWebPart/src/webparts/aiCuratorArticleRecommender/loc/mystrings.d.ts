@@ -1,19 +1,22 @@
 declare interface IAiCuratorArticleRecommenderWebPartStrings {
   PropertyPaneDescription: string;
-  LlmConfigGroupName: string;
   DataSourceGroupName: string;
   PersonalizationGroupName: string;
-
-  OpenAiModelFieldLabel: string;
-  OpenAiSystemPromptFieldLabel: string;
-  MaxArticlesFieldLabel: string;
-  EnableCachingFieldLabel: string;
 
   ListNameFieldLabel: string;
 
   UserPersonalizationListNameFieldLabel: string;
   VivaEngageEnabledFieldLabel: string;
   YammerClientIdFieldLabel: string;
+
+  SearchPlaceholder: string;
+  SearchButton: string;
+  NoTopicsFound: string;
+  TopicsFetchError: string;
+  ArticlesFetchError: string;
+  NoArticlesFound: string;
+  NoInterestsSaved: string;
+  EmptyInterests: string;
 }
 
 declare module 'AiCuratorArticleRecommenderWebPartStrings' {

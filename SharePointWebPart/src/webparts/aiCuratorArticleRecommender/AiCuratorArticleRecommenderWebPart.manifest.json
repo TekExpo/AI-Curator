@@ -22,17 +22,14 @@
         "default": "AI Curator - Article Recommender"
       },
       "description": {
-        "default": "AI-powered article recommender using LLM endpoints and SharePoint list keywords"
+        "default": "AI-powered article recommender. Topics are suggested via an external API; articles are fetched from an external articles API."
       },
       "officeFabricIconFontName": "Articles",
       "properties": {
-        "openAiModel": "gpt-4.1-mini",
-        "openAiSystemPrompt": "You recommend articles based on a list of keywords. Return only valid JSON. The JSON must be an array of objects with this exact schema: [{\"title\":\"string\",\"url\":\"https://example.com\",\"summary\":\"string\"}]. Use real-looking article titles and absolute URLs. Return at most {{maxArticles}} items.",
-        "listName": "Articles",
-        "keywordColumnName": "Keywords",
-        "siteUrl": "",
-        "maxArticles": 5,
-        "enableCaching": true
+        "articlesListName": "Articles",
+        "userPersonalizationListName": "UserPersonalization",
+        "vivaEngageEnabled": false,
+        "yammerClientId": ""
       }
     }
   ]

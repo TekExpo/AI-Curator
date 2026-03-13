@@ -16,9 +16,9 @@
     },
     "webApiPermissionRequests": [
       { "resource": "Microsoft Graph", "scope": "Group.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "GroupMember.Read.All" },
       { "resource": "Microsoft Graph", "scope": "User.Read" },
-      { "resource": "Microsoft Graph", "scope": "ChannelMessage.Send" },
-      { "resource": "Yammer", "scope": "user_impersonation" }
+      { "resource": "Microsoft Graph", "scope": "ChannelMessage.Send" }
     ],
     "metadata": {
       "shortDescription": {
