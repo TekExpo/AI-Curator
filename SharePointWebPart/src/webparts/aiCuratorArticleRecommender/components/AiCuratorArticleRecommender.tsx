@@ -198,7 +198,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
           patchState({ isLoadingArticles: false, articles });
         }
       }
-    } catch (err) {
+    } catch {
       if (!controller.signal.aborted) {
         patchState({
           isLoadingArticles: false,
@@ -244,7 +244,6 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         abortControllerRef.current.abort();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Tab switch ─────────────────────────────────────────────────────────────

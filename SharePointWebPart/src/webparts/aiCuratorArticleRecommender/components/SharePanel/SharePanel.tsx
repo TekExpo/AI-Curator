@@ -85,7 +85,6 @@ const SharePanel: React.FC<ISharePanelProps> = (props) => {
       setSuccessMessage('');
       setIsPosting(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleDismiss = (): void => {
@@ -255,7 +254,6 @@ const SharePanel: React.FC<ISharePanelProps> = (props) => {
           </Text>
           {/* Quill output is sanitised. articleUrl is escaped before insertion. */}
           <div
-            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{ __html: previewHtml }}
             style={{ fontSize: 14, color: '#323130', lineHeight: '1.6', wordBreak: 'break-word' }}
           />

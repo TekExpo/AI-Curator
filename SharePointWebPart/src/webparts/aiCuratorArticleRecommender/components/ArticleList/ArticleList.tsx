@@ -67,7 +67,7 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
           key={`article-${index}-${article.url}`}
           article={article}
           index={index}
-          isSaved={savedArticleUrls.includes(article.url)}
+          isSaved={savedArticleUrls.indexOf(article.url) !== -1}
           vivaEngageEnabled={vivaEngageEnabled}
           onSave={onSaveArticle}
           onShare={onShareArticle}

@@ -39,7 +39,7 @@ interface IArticleCardProps {
  * description, URL, and Save / Share action buttons.
  */
 const ArticleCard: React.FC<IArticleCardProps> = (props) => {
-  const { article, index, isSaved, vivaEngageEnabled, onSave, onShare } = props;
+  const { article, index, isSaved, onSave, onShare } = props;
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(isSaved);
 

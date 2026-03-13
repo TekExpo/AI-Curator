@@ -159,7 +159,7 @@ export class SharePointService {
       .split(',')
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
-    if (existing.includes(newArticleUrl.trim())) {
+    if (existing.indexOf(newArticleUrl.trim()) !== -1) {
       return; // already saved — no-op
     }
     existing.push(newArticleUrl.trim());
