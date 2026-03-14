@@ -5,11 +5,11 @@ A production-ready SharePoint Framework (SPFx) web part with AI-powered article 
 ## Features
 
 - **Tag-Based Personalization** – Users select interest tags from the Articles list on the "My Interests" tab and save them to their personal record in SharePoint.
-- **AI-Powered Recommendations** – Saved tags are sent to your Azure OpenAI / LLM endpoint to produce tailored article recommendations on the "Recommended Articles" tab.
+- **AI-Powered Recommendations** – Saved tags are sent to the AI Curator API to fetch tailored article recommendations on the "Recommended Articles" tab.
 - **Save & Share Articles** – Each recommendation can be bookmarked to the user's saved links, or shared to a Viva Engage (Yammer) group directly from the web part.
-- **Configurable via Property Pane** – LLM endpoint, model, system prompt, list names, and Viva Engage settings are editable without code changes.
+- **Configurable via Property Pane** – List names and Viva Engage settings are editable without code changes.
 - **Responsive & Accessible** – Built with Fluent UI v8 React components. Supports dark/light themes and Teams contexts.
-- **Session Caching** – Optional sessionStorage caching with 15-minute TTL to reduce redundant AI API calls.
+- **Session Caching** – Optional sessionStorage caching with 15-minute TTL to reduce redundant API calls.
 - **Teams Compatible** – Supports SharePointWebPart, TeamsTab, and TeamsPersonalApp hosts.
 
 ## Keyword / Tag Data Flow
@@ -18,7 +18,7 @@ A production-ready SharePoint Framework (SPFx) web part with AI-powered article 
 >
 > 1. Tags are read from the **Keywords** column of the **Articles** list (Tab 1 chip options).
 > 2. The user selects tags and clicks **Save My Interests** → stored in their **User Personalization** list record (matched by numeric SharePoint User ID).
-> 3. On Tab 2 activation, saved `SelectedTags` are fetched from the User Personalization list and sent to the LLM to generate recommendations.
+> 3. On Tab 2 activation, saved `SelectedTags` are fetched from the User Personalization list and sent to the AI Curator API to generate recommendations.
 > 4. The property pane never contains any keyword or tag fields.
 
 ---
@@ -47,7 +47,7 @@ Create this list manually in the same SharePoint site before deploying the web p
 | SelectedTags  | SelectedTags  | Multiple lines of text (plain)     | JSON array string of selected tag names, e.g. `["AI","DevOps"]` |
 | SavedLinks    | SavedLinks    | Multiple lines of text (plain)     | JSON array string of saved article URLs                    |
 
-> **Important:** `UserId` is used to look up and update the user's record. The `SelectedTags` value is sent directly to the LLM for recommendations.
+> **Important:** `UserId` is used to look up and update the user's record. The `SelectedTags` value is sent to the AI Curator API to fetch recommendations.
 
 ---
 
@@ -111,22 +111,13 @@ After deployment, go to **SharePoint Admin Center → Advanced → API Access** 
 
 ## Property Pane Configuration
 
-### Group 1: LLM Configuration
-
-| Property                | Type    | Default          | Description                                         |
-| ----------------------- | ------- | ---------------- | --------------------------------------------------- |
-| OpenAI Model            | Text    | `gpt-4o`         | Model name to use in chat completions requests      |
-| System Prompt           | Text    | (built-in prompt)| Custom system prompt for the LLM                    |
-| Max Articles            | Slider  | `5`              | Maximum recommendations to return (1–25)            |
-| Enable Response Caching | Toggle  | `true`           | Cache LLM responses in sessionStorage (15-min TTL)  |
-
-### Group 2: SharePoint Data Source
+### Group 1: SharePoint Data Source
 
 | Property           | Type | Default    | Description                                           |
 | ------------------ | ---- | ---------- | ----------------------------------------------------- |
 | Articles List Name | Text | `Articles` | Display name of the list containing article keywords  |
 
-### Group 3: Personalization & Sharing
+### Group 2: Personalization & Sharing
 
 | Property                   | Type   | Default               | Description                                                     |
 | -------------------------- | ------ | --------------------- | --------------------------------------------------------------- |
@@ -135,22 +126,6 @@ After deployment, go to **SharePoint Admin Center → Advanced → API Access** 
 | Yammer App Client ID       | Text   | (empty)               | Client ID from Yammer app registration (for OAuth)              |
 
 > **Note:** There are no keyword or tag fields in the property pane. Tags are sourced at runtime from the Articles list, and user selections are persisted in the User Personalization list.
-
----
-
-## LLM / Azure OpenAI Configuration
-
-The endpoint URL and API key are stored in:  
-`src/webparts/aiCuratorArticleRecommender/AiCuratorArticleRecommender.config.ts`
-
-```typescript
-export const aiCuratorArticleRecommenderConfig = {
-  llmEndpointUrl: 'https://<resource>.cognitiveservices.azure.com/openai/deployments/<model>/chat/completions?api-version=2025-01-01-preview',
-  openAiApiKey: '<your-api-key>'
-} as const;
-```
-
-Update these values before building. Do **not** commit secrets to source control — consider using environment-specific config injection or Azure Key Vault for production.
 
 ---
 
@@ -177,7 +152,7 @@ SharePointWebPart/
 ├── src/
 │   └── webparts/
 │       └── aiCuratorArticleRecommender/
-│           ├── AiCuratorArticleRecommender.config.ts   # LLM endpoint + API key
+│           ├── AiCuratorArticleRecommender.config.ts   # API configuration
 │           ├── AiCuratorArticleRecommenderWebPart.ts   # Web part class & property pane
 │           ├── components/
 │           │   ├── AiCuratorArticleRecommender.tsx           # Root React component (tabs)
@@ -196,7 +171,7 @@ SharePointWebPart/
 │           │       └── ISharePanelProps.ts
 │           ├── services/
 │           │   ├── SharePointService.ts          # SPHttpClient-based SP REST calls
-│           │   ├── OpenAIService.ts              # LLM chat completions + caching
+│           │   ├── TopicsService.ts              # AI Curator API calls + caching
 │           │   └── VivaEngageService.ts          # MSGraphClientV3 Yammer group/post
 │           └── loc/
 │               ├── en-us.js                     # English strings
