@@ -7,8 +7,7 @@ define([], function() {
     "ListNameFieldLabel": "SharePoint List Name",
 
     "UserPersonalizationListNameFieldLabel": "User Personalization List Name",
-    "VivaEngageEnabledFieldLabel": "Enable Viva Engage Sharing",
-    "YammerClientIdFieldLabel": "Yammer App Client ID",
+    "ArticlesLimitFieldLabel": "Number of Articles",
 
     "SearchPlaceholder": "Search for topics...",
     "SearchButton": "Search",

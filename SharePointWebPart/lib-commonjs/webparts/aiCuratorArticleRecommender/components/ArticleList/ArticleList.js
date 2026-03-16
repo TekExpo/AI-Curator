@@ -9,7 +9,7 @@ var ArticleCard_1 = tslib_1.__importDefault(require("./ArticleCard"));
  * Renders the AI-powered article recommendation list.
  */
 var ArticleList = function (props) {
-    var articles = props.articles, isLoading = props.isLoading, errorMessage = props.errorMessage, infoMessage = props.infoMessage, savedArticleUrls = props.savedArticleUrls, onSaveArticle = props.onSaveArticle, onShareArticle = props.onShareArticle, onLinkedInShareArticle = props.onLinkedInShareArticle, onReload = props.onReload, vivaEngageEnabled = props.vivaEngageEnabled;
+    var articles = props.articles, isLoading = props.isLoading, errorMessage = props.errorMessage, infoMessage = props.infoMessage, savedArticleUrls = props.savedArticleUrls, onSaveArticle = props.onSaveArticle, onShareArticle = props.onShareArticle, onLinkedInShareArticle = props.onLinkedInShareArticle, onReload = props.onReload;
     if (isLoading) {
         return (React.createElement(react_1.Stack, { horizontalAlign: "center", verticalAlign: "center", style: { minHeight: 200, padding: 40 } },
             React.createElement(react_1.Spinner, { size: react_1.SpinnerSize.large, label: "Fetching article recommendations\u2026", labelPosition: "bottom" })));
@@ -20,7 +20,7 @@ var ArticleList = function (props) {
         errorMessage && (React.createElement(react_1.MessageBar, { messageBarType: react_1.MessageBarType.error, isMultiline: true }, errorMessage)),
         infoMessage && !errorMessage && (React.createElement(react_1.MessageBar, { messageBarType: react_1.MessageBarType.info, isMultiline: true }, infoMessage)),
         !isLoading && !errorMessage && !infoMessage && articles.length === 0 && (React.createElement(react_1.MessageBar, { messageBarType: react_1.MessageBarType.info }, "No article recommendations were returned. Try updating your interests in the My Interests tab.")),
-        articles.map(function (article, index) { return (React.createElement(ArticleCard_1.default, { key: "article-".concat(index, "-").concat(article.url), article: article, index: index, isSaved: savedArticleUrls.indexOf(article.url) !== -1, vivaEngageEnabled: vivaEngageEnabled, onSave: onSaveArticle, onShare: onShareArticle, onLinkedInShare: onLinkedInShareArticle })); }),
+        articles.map(function (article, index) { return (React.createElement(ArticleCard_1.default, { key: "article-".concat(index, "-").concat(article.url), article: article, index: index, isSaved: savedArticleUrls.indexOf(article.url) !== -1, onSave: onSaveArticle, onShare: onShareArticle, onLinkedInShare: onLinkedInShareArticle })); }),
         articles.length > 0 && (React.createElement(react_1.Text, { variant: "tiny", style: {
                 textAlign: 'center',
                 color: '#605e5c',

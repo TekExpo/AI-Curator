@@ -50,14 +50,13 @@ var AiCuratorArticleRecommenderWebPart = /** @class */ (function (_super) {
         });
     };
     AiCuratorArticleRecommenderWebPart.prototype.render = function () {
-        var _a;
+        var _a, _b;
         var element = React.createElement(AiCuratorArticleRecommender_1.default, {
             articlesListName: this.properties.articlesListName || 'Articles',
             userPersonalizationListName: this.properties.userPersonalizationListName || 'userPersonalization',
-            vivaEngageEnabled: !!this.properties.vivaEngageEnabled,
-            yammerClientId: this.properties.yammerClientId || '',
+            articlesLimit: (_a = this.properties.articlesLimit) !== null && _a !== void 0 ? _a : 10,
             isDarkTheme: this._isDarkTheme,
-            hasTeamsContext: !!((_a = this.context.sdks) === null || _a === void 0 ? void 0 : _a.microsoftTeams),
+            hasTeamsContext: !!((_b = this.context.sdks) === null || _b === void 0 ? void 0 : _b.microsoftTeams),
             webPartContext: this.context
         });
         ReactDom.render(element, this.domElement);
@@ -113,14 +112,12 @@ var AiCuratorArticleRecommenderWebPart = /** @class */ (function (_super) {
                                     description: 'Display name of the list storing user tag selections and saved links.',
                                     value: 'userPersonalization'
                                 }),
-                                (0, sp_property_pane_1.PropertyPaneToggle)('vivaEngageEnabled', {
-                                    label: strings.VivaEngageEnabledFieldLabel,
-                                    onText: 'Enabled',
-                                    offText: 'Disabled'
-                                }),
-                                (0, sp_property_pane_1.PropertyPaneTextField)('yammerClientId', {
-                                    label: strings.YammerClientIdFieldLabel,
-                                    description: 'Required only if using Yammer REST API instead of Microsoft Graph.'
+                                (0, sp_property_pane_1.PropertyPaneSlider)('articlesLimit', {
+                                    label: strings.ArticlesLimitFieldLabel,
+                                    min: 1,
+                                    max: 100,
+                                    step: 1,
+                                    showValue: true
                                 })
                             ]
                         }

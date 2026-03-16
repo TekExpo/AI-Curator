@@ -25,8 +25,7 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
     onSaveArticle,
     onShareArticle,
     onLinkedInShareArticle,
-    onReload,
-    vivaEngageEnabled
+    onReload
   } = props;
 
   if (isLoading) {
@@ -83,7 +82,6 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
           article={article}
           index={index}
           isSaved={savedArticleUrls.indexOf(article.url) !== -1}
-          vivaEngageEnabled={vivaEngageEnabled}
           onSave={onSaveArticle}
           onShare={onShareArticle}
           onLinkedInShare={onLinkedInShareArticle}

@@ -8,10 +8,8 @@ export interface IAiCuratorArticleRecommenderProps {
   articlesListName: string;
   /** Display name of the userPersonalization list */
   userPersonalizationListName: string;
-  /** Whether Viva Engage sharing is enabled */
-  vivaEngageEnabled: boolean;
-  /** Yammer App Client ID (only needed for Yammer REST API) */
-  yammerClientId: string;
+  /** Maximum number of articles to fetch from the API */
+  articlesLimit: number;
   /** Whether the current SharePoint theme is dark */
   isDarkTheme: boolean;
   /** Whether the web part is running inside Microsoft Teams */

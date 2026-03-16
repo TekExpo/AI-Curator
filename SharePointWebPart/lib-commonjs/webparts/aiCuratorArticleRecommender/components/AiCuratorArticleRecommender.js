@@ -68,7 +68,7 @@ var INITIAL_STATE = {
 // Component
 // ------------------------------------------------------------------
 var AiCuratorArticleRecommender = function (props) {
-    var userPersonalizationListName = props.userPersonalizationListName, vivaEngageEnabled = props.vivaEngageEnabled, isDarkTheme = props.isDarkTheme, hasTeamsContext = props.hasTeamsContext, webPartContext = props.webPartContext;
+    var userPersonalizationListName = props.userPersonalizationListName, articlesLimit = props.articlesLimit, isDarkTheme = props.isDarkTheme, hasTeamsContext = props.hasTeamsContext, webPartContext = props.webPartContext;
     // ── Services ───────────────────────────────────────────────────────────────
     var spService = (0, react_1.useRef)(new SharePointService_1.SharePointService(webPartContext));
     var topicsServiceRef = (0, react_1.useRef)(new TopicsService_1.TopicsService());
@@ -82,6 +82,8 @@ var AiCuratorArticleRecommender = function (props) {
     var _g = (0, react_1.useState)(''), tab3Error = _g[0], setTab3Error = _g[1];
     var _h = (0, react_1.useState)(''), removingUrl = _h[0], setRemovingUrl = _h[1];
     var abortControllerRef = (0, react_1.useRef)(null);
+    // Tracks whether articles have been loaded at least once so tab switches don't re-fetch.
+    var articlesLoadedRef = (0, react_1.useRef)(false);
     var patchState = (0, react_1.useCallback)(function (patch) {
         setState(function (prev) { return (tslib_1.__assign(tslib_1.__assign({}, prev), patch)); });
     }, []);
@@ -144,6 +146,7 @@ var AiCuratorArticleRecommender = function (props) {
                     record = _e.sent();
                     if (!record) {
                         if (!controller.signal.aborted) {
+                            articlesLoadedRef.current = true;
                             patchState({
                                 isLoadingArticles: false,
                                 tab2Info: 'No interests saved yet. Go to the My Interests tab to select your topics.'
@@ -154,6 +157,7 @@ var AiCuratorArticleRecommender = function (props) {
                     tags = (_c = (_b = record.SelectedTags) === null || _b === void 0 ? void 0 : _b.trim()) !== null && _c !== void 0 ? _c : '';
                     if (!tags) {
                         if (!controller.signal.aborted) {
+                            articlesLoadedRef.current = true;
                             patchState({
                                 isLoadingArticles: false,
                                 tab2Info: 'Your interests list is empty. Please select topics in the My Interests tab.'
@@ -167,10 +171,11 @@ var AiCuratorArticleRecommender = function (props) {
                         currentUserLoginName: currentUser.LoginName,
                         savedLinks: (_d = record.SavedLinks) !== null && _d !== void 0 ? _d : ''
                     });
-                    return [4 /*yield*/, topicsServiceRef.current.getArticles(tags, 20)];
+                    return [4 /*yield*/, topicsServiceRef.current.getArticles(tags, articlesLimit)];
                 case 4:
                     articles = _e.sent();
                     if (!controller.signal.aborted) {
+                        articlesLoadedRef.current = true;
                         if (articles.length === 0) {
                             patchState({
                                 isLoadingArticles: false,
@@ -253,9 +258,11 @@ var AiCuratorArticleRecommender = function (props) {
         var key = (_a = item.props.itemKey) !== null && _a !== void 0 ? _a : TAB_ARTICLES;
         patchState({ activeTab: key });
         if (key === TAB_ARTICLES) {
-            loadTab2Data().catch(function (err) {
-                return console.error('AI Curator: Failed to load Tab 2 data', err);
-            });
+            if (!articlesLoadedRef.current) {
+                loadTab2Data().catch(function (err) {
+                    return console.error('AI Curator: Failed to load Tab 2 data', err);
+                });
+            }
         }
         else if (key === TAB_SAVED) {
             refreshSavedLinks().catch(function (err) {
@@ -449,7 +456,7 @@ var AiCuratorArticleRecommender = function (props) {
                     }
                 } },
                 React.createElement(react_2.PivotItem, { headerText: "Recommended Articles", itemKey: TAB_ARTICLES, itemIcon: "Lightbulb" },
-                    React.createElement(ArticleList_1.default, { articles: state.articles, isLoading: state.isLoadingArticles, errorMessage: state.tab2Error, infoMessage: state.tab2Info, savedArticleUrls: savedArticleUrls, onSaveArticle: handleSaveArticle, onShareArticle: handleShareArticle, onLinkedInShareArticle: handleLinkedInShareArticle, onReload: function () { void loadTab2Data(); }, vivaEngageEnabled: vivaEngageEnabled })),
+                    React.createElement(ArticleList_1.default, { articles: state.articles, isLoading: state.isLoadingArticles, errorMessage: state.tab2Error, infoMessage: state.tab2Info, savedArticleUrls: savedArticleUrls, onSaveArticle: handleSaveArticle, onShareArticle: handleShareArticle, onLinkedInShareArticle: handleLinkedInShareArticle, onReload: function () { void loadTab2Data(); } })),
                 React.createElement(react_2.PivotItem, { headerText: "My Saved Links", itemKey: TAB_SAVED, itemIcon: "FavoriteStar" },
                     tab3Error && (React.createElement(react_2.MessageBar, { messageBarType: react_2.MessageBarType.error, isMultiline: true, onDismiss: function () { return setTab3Error(''); }, style: { marginTop: 8, marginBottom: 4 } }, tab3Error)),
                     isLoadingSavedLinks ? (React.createElement(react_2.Stack, { horizontalAlign: "center", style: { padding: 40 } },

@@ -28,8 +28,7 @@
       "properties": {
         "articlesListName": "Articles",
         "userPersonalizationListName": "UserPersonalization",
-        "vivaEngageEnabled": false,
-        "yammerClientId": ""
+        "articlesLimit": 10
       }
     }
   ]

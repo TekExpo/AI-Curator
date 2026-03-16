@@ -29,7 +29,6 @@ interface IArticleCardProps {
   article: IArticle;
   index: number;
   isSaved: boolean;
-  vivaEngageEnabled: boolean;
   onSave: (article: IArticle) => Promise<void>;
   onShare: (article: IArticle) => void;
   onLinkedInShare: (article: IArticle) => void;

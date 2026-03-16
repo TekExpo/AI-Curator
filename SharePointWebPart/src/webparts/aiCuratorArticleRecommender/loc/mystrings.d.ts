@@ -6,8 +6,7 @@ declare interface IAiCuratorArticleRecommenderWebPartStrings {
   ListNameFieldLabel: string;
 
   UserPersonalizationListNameFieldLabel: string;
-  VivaEngageEnabledFieldLabel: string;
-  YammerClientIdFieldLabel: string;
+  ArticlesLimitFieldLabel: string;
 
   SearchPlaceholder: string;
   SearchButton: string;

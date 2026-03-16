@@ -92,7 +92,7 @@ const INITIAL_STATE: IAiCuratorArticleRecommenderState = {
 const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> = (props) => {
   const {
     userPersonalizationListName,
-    vivaEngageEnabled,
+    articlesLimit,
     isDarkTheme,
     hasTeamsContext,
     webPartContext
@@ -113,6 +113,8 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
   const [removingUrl, setRemovingUrl] = useState('');
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Tracks whether articles have been loaded at least once so tab switches don't re-fetch.
+  const articlesLoadedRef = useRef(false);
 
   const patchState = useCallback(
     (patch: Partial<IAiCuratorArticleRecommenderState>): void => {
@@ -162,6 +164,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
 
       if (!record) {
         if (!controller.signal.aborted) {
+          articlesLoadedRef.current = true;
           patchState({
             isLoadingArticles: false,
             tab2Info:
@@ -174,6 +177,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
       const tags = record.SelectedTags?.trim() ?? '';
       if (!tags) {
         if (!controller.signal.aborted) {
+          articlesLoadedRef.current = true;
           patchState({
             isLoadingArticles: false,
             tab2Info:
@@ -190,9 +194,10 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         savedLinks: record.SavedLinks ?? ''
       });
 
-      const articles = await topicsServiceRef.current.getArticles(tags, 20);
+      const articles = await topicsServiceRef.current.getArticles(tags, articlesLimit);
 
       if (!controller.signal.aborted) {
+        articlesLoadedRef.current = true;
         if (articles.length === 0) {
           patchState({
             isLoadingArticles: false,
@@ -257,9 +262,11 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
       const key = item.props.itemKey ?? TAB_ARTICLES;
       patchState({ activeTab: key });
       if (key === TAB_ARTICLES) {
-        loadTab2Data().catch((err) =>
-          console.error('AI Curator: Failed to load Tab 2 data', err)
-        );
+        if (!articlesLoadedRef.current) {
+          loadTab2Data().catch((err) =>
+            console.error('AI Curator: Failed to load Tab 2 data', err)
+          );
+        }
       } else if (key === TAB_SAVED) {
         refreshSavedLinks().catch((err) =>
           console.error('AI Curator: Failed to refresh saved links', err)
@@ -477,7 +484,6 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
               onShareArticle={handleShareArticle}
               onLinkedInShareArticle={handleLinkedInShareArticle}
               onReload={() => { void loadTab2Data(); }}
-              vivaEngageEnabled={vivaEngageEnabled}
             />
           </PivotItem>
 

@@ -27,7 +27,7 @@ import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
   PropertyPaneTextField,
-  PropertyPaneToggle
+  PropertyPaneSlider
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
@@ -44,8 +44,7 @@ export interface IAiCuratorArticleRecommenderWebPartProps {
   articlesListName: string;
   // ── Personalization & Sharing ─────────────────────────────────────
   userPersonalizationListName: string;
-  vivaEngageEnabled: boolean;
-  yammerClientId: string;
+  articlesLimit: number;
 }
 
 export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWebPart<IAiCuratorArticleRecommenderWebPartProps> {
@@ -63,8 +62,7 @@ export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWe
       {
         articlesListName: this.properties.articlesListName || 'Articles',
         userPersonalizationListName: this.properties.userPersonalizationListName || 'userPersonalization',
-        vivaEngageEnabled: !!this.properties.vivaEngageEnabled,
-        yammerClientId: this.properties.yammerClientId || '',
+        articlesLimit: this.properties.articlesLimit ?? 10,
         isDarkTheme: this._isDarkTheme,
         hasTeamsContext: !!this.context.sdks?.microsoftTeams,
         webPartContext: this.context
@@ -120,14 +118,12 @@ export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWe
                   description: 'Display name of the list storing user tag selections and saved links.',
                   value: 'userPersonalization'
                 }),
-                PropertyPaneToggle('vivaEngageEnabled', {
-                  label: strings.VivaEngageEnabledFieldLabel,
-                  onText: 'Enabled',
-                  offText: 'Disabled'
-                }),
-                PropertyPaneTextField('yammerClientId', {
-                  label: strings.YammerClientIdFieldLabel,
-                  description: 'Required only if using Yammer REST API instead of Microsoft Graph.'
+                PropertyPaneSlider('articlesLimit', {
+                  label: strings.ArticlesLimitFieldLabel,
+                  min: 1,
+                  max: 100,
+                  step: 1,
+                  showValue: true
                 })
               ]
             }
