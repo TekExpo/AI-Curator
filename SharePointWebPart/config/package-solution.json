@@ -15,10 +15,11 @@
       "mpnId": "Undefined-1.22.1"
     },
     "webApiPermissionRequests": [
-      { "resource": "Microsoft Graph", "scope": "Group.Read.All" },
-      { "resource": "Microsoft Graph", "scope": "GroupMember.Read.All" },
       { "resource": "Microsoft Graph", "scope": "User.Read" },
-      { "resource": "Microsoft Graph", "scope": "ChannelMessage.Send" }
+      { "resource": "Microsoft Graph", "scope": "VivaEngageCommunity.ReadWrite.All" },
+      { "resource": "Microsoft Graph", "scope": "Group.ReadWrite.All" },
+      { "resource": "Microsoft Graph", "scope": "Community.ReadWrite.All" },
+      { "resource": "Microsoft Graph", "scope": "Community.Read.All" }
     ],
     "metadata": {
       "shortDescription": {

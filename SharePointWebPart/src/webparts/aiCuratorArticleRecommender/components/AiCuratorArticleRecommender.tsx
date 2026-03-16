@@ -51,6 +51,7 @@ import { VivaEngageService, IYammerGroup } from '../services/VivaEngageService';
 import TagSelector from './TagSelector/TagSelector';
 import ArticleList from './ArticleList/ArticleList';
 import SharePanel from './SharePanel/SharePanel';
+import LinkedInPanel from './LinkedInPanel/LinkedInPanel';
 
 import styles from './AiCuratorArticleRecommender.module.scss';
 
@@ -75,6 +76,9 @@ const INITIAL_STATE: IAiCuratorArticleRecommenderState = {
   sharePanelArticleUrl: '',
   sharePanelArticleTitle: '',
   sharePanelArticleSummary: '',
+  linkedInPanelArticleUrl: '',
+  linkedInPanelArticleTitle: '',
+  linkedInPanelArticleSummary: '',
   userPersonalizationItemId: null,
   currentUserId: null,
   currentUserLoginName: '',
@@ -396,6 +400,17 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
     [loadYammerGroups, patchState]
   );
 
+  const handleLinkedInShareArticle = useCallback(
+    (article: IArticle): void => {
+      patchState({
+        linkedInPanelArticleUrl: article.url,
+        linkedInPanelArticleTitle: article.title,
+        linkedInPanelArticleSummary: article.summary ?? ''
+      });
+    },
+    [patchState]
+  );
+
   const handlePostToVivaEngage = useCallback(
     async (groupId: string, userComments: string): Promise<void> => {
       const graphClient = await webPartContext.msGraphClientFactory.getClient('3');
@@ -416,6 +431,9 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
 
   const sharePanelIsOpen =
     state.sharePanelArticleUrl.length > 0 && state.sharePanelArticleTitle.length > 0;
+
+  const linkedInPanelIsOpen =
+    state.linkedInPanelArticleUrl.length > 0 && state.linkedInPanelArticleTitle.length > 0;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -457,6 +475,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
               savedArticleUrls={savedArticleUrls}
               onSaveArticle={handleSaveArticle}
               onShareArticle={handleShareArticle}
+              onLinkedInShareArticle={handleLinkedInShareArticle}
               vivaEngageEnabled={vivaEngageEnabled}
             />
           </PivotItem>
@@ -569,6 +588,14 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
         onRetryLoadGroups={loadYammerGroups}
       onDismiss={() => patchState({ sharePanelArticleUrl: '', sharePanelArticleTitle: '', sharePanelArticleSummary: '' })}
         onPost={handlePostToVivaEngage}
+      />
+
+      <LinkedInPanel
+        isOpen={linkedInPanelIsOpen}
+        articleUrl={state.linkedInPanelArticleUrl}
+        articleTitle={state.linkedInPanelArticleTitle}
+        articleSummary={state.linkedInPanelArticleSummary}
+        onDismiss={() => patchState({ linkedInPanelArticleUrl: '', linkedInPanelArticleTitle: '', linkedInPanelArticleSummary: '' })}
       />
     </section>
   );

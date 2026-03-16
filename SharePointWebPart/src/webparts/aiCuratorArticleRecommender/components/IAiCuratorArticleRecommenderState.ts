@@ -28,6 +28,12 @@ export interface IAiCuratorArticleRecommenderState {
   sharePanelArticleTitle: string;
   /** Summary of the article being shared (pre-fills the description field) */
   sharePanelArticleSummary: string;
+  /** The LinkedIn panel is open for this article URL */
+  linkedInPanelArticleUrl: string;
+  /** The LinkedIn panel is open for this article title */
+  linkedInPanelArticleTitle: string;
+  /** Summary of the article being shared on LinkedIn (pre-fills the description field) */
+  linkedInPanelArticleSummary: string;
   /** ID of the current user's userPersonalization list item (null if not yet created) */
   userPersonalizationItemId: number | null;
   /** Numeric SharePoint ID of the currently logged-in user */

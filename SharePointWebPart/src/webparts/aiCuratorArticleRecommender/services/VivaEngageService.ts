@@ -17,23 +17,19 @@ export class VivaEngageService {
   }
 
   /**
-   * Returns Viva Engage communities the current user belongs to.
-   * Filters M365 groups to those provisioned with a Yammer/Viva Engage backend.
+   * Returns all Viva Engage communities via the employeeExperience API.
+   * Uses the community's associated M365 groupId for posting.
    */
   public async getYammerGroups(): Promise<IYammerGroup[]> {
     try {
-      // Filter M365 groups to only those backed by Viva Engage (Yammer)
       const result = await this._graphClient
-        .api('/groups')
-        .filter("resourceProvisioningOptions/Any(x:x eq 'Yammer')")
-        .select('id,displayName')
-        .top(100)
+        .api('/employeeExperience/communities')
         .get() as {
-          value?: Array<{ id: string; displayName: string }>;
+          value?: Array<{ id: string; displayName: string; groupId: string }>;
         };
 
-      const groups = result.value ?? [];
-      return groups.map((g) => ({ id: g.id, name: g.displayName }));
+      const communities = result.value ?? [];
+      return communities.map((c) => ({ id: c.groupId, name: c.displayName }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`Failed to fetch Viva Engage communities: ${msg}`);
@@ -68,11 +64,9 @@ export class VivaEngageService {
           topic: 'AI Curator \u2013 Shared Article',
           posts: [
             {
-              post: {
-                body: {
-                  contentType: 'html',
-                  content: htmlContent
-                }
+              body: {
+                contentType: 'html',
+                content: htmlContent
               }
             }
           ]

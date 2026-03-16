@@ -11,6 +11,8 @@ export interface IArticleListProps {
   onSaveArticle: (article: IArticle) => Promise<void>;
   /** Called when user clicks Share on an article card */
   onShareArticle: (article: IArticle) => void;
+  /** Called when user clicks Share on LinkedIn on an article card */
+  onLinkedInShareArticle: (article: IArticle) => void;
   /** Whether Viva Engage sharing is enabled */
   vivaEngageEnabled: boolean;
 }

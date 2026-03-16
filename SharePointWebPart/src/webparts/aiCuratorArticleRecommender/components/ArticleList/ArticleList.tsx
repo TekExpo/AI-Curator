@@ -23,6 +23,7 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
     savedArticleUrls,
     onSaveArticle,
     onShareArticle,
+    onLinkedInShareArticle,
     vivaEngageEnabled
   } = props;
 
@@ -71,6 +72,7 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
           vivaEngageEnabled={vivaEngageEnabled}
           onSave={onSaveArticle}
           onShare={onShareArticle}
+          onLinkedInShare={onLinkedInShareArticle}
         />
       ))}
 

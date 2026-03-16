@@ -35,6 +35,7 @@ var VivaEngageService_1 = require("../services/VivaEngageService");
 var TagSelector_1 = tslib_1.__importDefault(require("./TagSelector/TagSelector"));
 var ArticleList_1 = tslib_1.__importDefault(require("./ArticleList/ArticleList"));
 var SharePanel_1 = tslib_1.__importDefault(require("./SharePanel/SharePanel"));
+var LinkedInPanel_1 = tslib_1.__importDefault(require("./LinkedInPanel/LinkedInPanel"));
 var AiCuratorArticleRecommender_module_scss_1 = tslib_1.__importDefault(require("./AiCuratorArticleRecommender.module.scss"));
 // ------------------------------------------------------------------
 // Constants
@@ -55,6 +56,9 @@ var INITIAL_STATE = {
     sharePanelArticleUrl: '',
     sharePanelArticleTitle: '',
     sharePanelArticleSummary: '',
+    linkedInPanelArticleUrl: '',
+    linkedInPanelArticleTitle: '',
+    linkedInPanelArticleSummary: '',
     userPersonalizationItemId: null,
     currentUserId: null,
     currentUserLoginName: '',
@@ -401,6 +405,14 @@ var AiCuratorArticleRecommender = function (props) {
         // Always (re-)fetch groups when the panel opens so stale/failed state is cleared
         loadYammerGroups();
     }, [loadYammerGroups, patchState]);
+    var handleLinkedInShareArticle = (0, react_1.useCallback)(function (article) {
+        var _a;
+        patchState({
+            linkedInPanelArticleUrl: article.url,
+            linkedInPanelArticleTitle: article.title,
+            linkedInPanelArticleSummary: (_a = article.summary) !== null && _a !== void 0 ? _a : ''
+        });
+    }, [patchState]);
     var handlePostToVivaEngage = (0, react_1.useCallback)(function (groupId, userComments) { return tslib_1.__awaiter(void 0, void 0, void 0, function () {
         var graphClient;
         return tslib_1.__generator(this, function (_a) {
@@ -421,6 +433,7 @@ var AiCuratorArticleRecommender = function (props) {
         .map(function (l) { return l.trim(); })
         .filter(function (l) { return l.length > 0; });
     var sharePanelIsOpen = state.sharePanelArticleUrl.length > 0 && state.sharePanelArticleTitle.length > 0;
+    var linkedInPanelIsOpen = state.linkedInPanelArticleUrl.length > 0 && state.linkedInPanelArticleTitle.length > 0;
     // ── Render ─────────────────────────────────────────────────────────────────
     return (React.createElement("section", { className: "".concat(AiCuratorArticleRecommender_module_scss_1.default.aiCuratorArticleRecommender, " ").concat(hasTeamsContext ? AiCuratorArticleRecommender_module_scss_1.default.teams : '', " ").concat(isDarkTheme ? AiCuratorArticleRecommender_module_scss_1.default.darkTheme : '') },
         React.createElement(react_2.Stack, { tokens: { childrenGap: 16 }, className: AiCuratorArticleRecommender_module_scss_1.default.container },
@@ -436,7 +449,7 @@ var AiCuratorArticleRecommender = function (props) {
                     }
                 } },
                 React.createElement(react_2.PivotItem, { headerText: "Recommended Articles", itemKey: TAB_ARTICLES, itemIcon: "Lightbulb" },
-                    React.createElement(ArticleList_1.default, { articles: state.articles, isLoading: state.isLoadingArticles, errorMessage: state.tab2Error, infoMessage: state.tab2Info, savedArticleUrls: savedArticleUrls, onSaveArticle: handleSaveArticle, onShareArticle: handleShareArticle, vivaEngageEnabled: vivaEngageEnabled })),
+                    React.createElement(ArticleList_1.default, { articles: state.articles, isLoading: state.isLoadingArticles, errorMessage: state.tab2Error, infoMessage: state.tab2Info, savedArticleUrls: savedArticleUrls, onSaveArticle: handleSaveArticle, onShareArticle: handleShareArticle, onLinkedInShareArticle: handleLinkedInShareArticle, vivaEngageEnabled: vivaEngageEnabled })),
                 React.createElement(react_2.PivotItem, { headerText: "My Saved Links", itemKey: TAB_SAVED, itemIcon: "FavoriteStar" },
                     tab3Error && (React.createElement(react_2.MessageBar, { messageBarType: react_2.MessageBarType.error, isMultiline: true, onDismiss: function () { return setTab3Error(''); }, style: { marginTop: 8, marginBottom: 4 } }, tab3Error)),
                     isLoadingSavedLinks ? (React.createElement(react_2.Stack, { horizontalAlign: "center", style: { padding: 40 } },
@@ -467,7 +480,8 @@ var AiCuratorArticleRecommender = function (props) {
                     state.tab1Error && (React.createElement(react_2.MessageBar, { messageBarType: react_2.MessageBarType.error, isMultiline: true, onDismiss: function () { return patchState({ tab1Error: '' }); }, style: { marginTop: 8, marginBottom: 4 } }, state.tab1Error)),
                     state.isLoadingTags ? (React.createElement(react_2.Stack, { horizontalAlign: "center", style: { padding: 40 } },
                         React.createElement(react_2.Spinner, { size: react_2.SpinnerSize.large, label: "Loading your interests\u2026", labelPosition: "bottom" }))) : (React.createElement(TagSelector_1.default, { savedTags: state.savedTags, successMessage: state.tab1Success, onSave: function (tags) { void handleSaveInterests(tags); }, isSaving: isSavingTags }))))),
-        React.createElement(SharePanel_1.default, { isOpen: sharePanelIsOpen, articleUrl: state.sharePanelArticleUrl, articleTitle: state.sharePanelArticleTitle, articleSummary: state.sharePanelArticleSummary, groups: yammerGroups, isLoadingGroups: isLoadingGroups, groupLoadError: yammerGroupsError, onRetryLoadGroups: loadYammerGroups, onDismiss: function () { return patchState({ sharePanelArticleUrl: '', sharePanelArticleTitle: '', sharePanelArticleSummary: '' }); }, onPost: handlePostToVivaEngage })));
+        React.createElement(SharePanel_1.default, { isOpen: sharePanelIsOpen, articleUrl: state.sharePanelArticleUrl, articleTitle: state.sharePanelArticleTitle, articleSummary: state.sharePanelArticleSummary, groups: yammerGroups, isLoadingGroups: isLoadingGroups, groupLoadError: yammerGroupsError, onRetryLoadGroups: loadYammerGroups, onDismiss: function () { return patchState({ sharePanelArticleUrl: '', sharePanelArticleTitle: '', sharePanelArticleSummary: '' }); }, onPost: handlePostToVivaEngage }),
+        React.createElement(LinkedInPanel_1.default, { isOpen: linkedInPanelIsOpen, articleUrl: state.linkedInPanelArticleUrl, articleTitle: state.linkedInPanelArticleTitle, articleSummary: state.linkedInPanelArticleSummary, onDismiss: function () { return patchState({ linkedInPanelArticleUrl: '', linkedInPanelArticleTitle: '', linkedInPanelArticleSummary: '' }); } })));
 };
 exports.default = AiCuratorArticleRecommender;
 //# sourceMappingURL=AiCuratorArticleRecommender.js.map

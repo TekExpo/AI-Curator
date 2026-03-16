@@ -23,9 +23,10 @@ function formatPublished(iso) {
  * description, URL, and Save / Share action buttons.
  */
 var ArticleCard = function (props) {
-    var article = props.article, index = props.index, isSaved = props.isSaved, onSave = props.onSave, onShare = props.onShare;
+    var article = props.article, index = props.index, isSaved = props.isSaved, onSave = props.onSave, onShare = props.onShare, onLinkedInShare = props.onLinkedInShare;
     var _a = (0, react_1.useState)(false), isSaving = _a[0], setIsSaving = _a[1];
     var _b = (0, react_1.useState)(isSaved), saved = _b[0], setSaved = _b[1];
+    var _c = (0, react_1.useState)(false), linkedInHovered = _c[0], setLinkedInHovered = _c[1];
     var handleSave = function () { return tslib_1.__awaiter(void 0, void 0, void 0, function () {
         return tslib_1.__generator(this, function (_a) {
             switch (_a.label) {
@@ -91,7 +92,24 @@ var ArticleCard = function (props) {
                             root: { color: '#605e5c' },
                             rootHovered: { color: GREEN },
                             icon: { fontSize: 16 }
-                        } }))))));
+                        } })),
+                React.createElement(react_2.TooltipHost, { content: "Share on LinkedIn" },
+                    React.createElement("button", { "aria-label": "Share on LinkedIn", onClick: function () { return onLinkedInShare(article); }, onMouseEnter: function () { return setLinkedInHovered(true); }, onMouseLeave: function () { return setLinkedInHovered(false); }, style: {
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 32,
+                            height: 32,
+                            padding: 0,
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            color: linkedInHovered ? '#0A66C2' : '#605e5c',
+                            borderRadius: 2,
+                            flexShrink: 0
+                        } },
+                        React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "16", height: "16", "aria-hidden": "true", focusable: "false" },
+                            React.createElement("path", { fill: "currentColor", d: "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" }))))))));
 };
 exports.default = ArticleCard;
 //# sourceMappingURL=ArticleCard.js.map

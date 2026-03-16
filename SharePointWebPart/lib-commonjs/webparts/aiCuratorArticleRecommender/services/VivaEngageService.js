@@ -11,27 +11,24 @@ var VivaEngageService = /** @class */ (function () {
         this._graphClient = graphClient;
     }
     /**
-     * Returns Viva Engage communities the current user belongs to.
-     * Filters M365 groups to those provisioned with a Yammer/Viva Engage backend.
+     * Returns all Viva Engage communities via the employeeExperience API.
+     * Uses the community's associated M365 groupId for posting.
      */
     VivaEngageService.prototype.getYammerGroups = function () {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var result, groups, err_1, msg;
+            var result, communities, err_1, msg;
             var _a;
             return tslib_1.__generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _b.trys.push([0, 2, , 3]);
                         return [4 /*yield*/, this._graphClient
-                                .api('/groups')
-                                .filter("resourceProvisioningOptions/Any(x:x eq 'Yammer')")
-                                .select('id,displayName')
-                                .top(100)
+                                .api('/employeeExperience/communities')
                                 .get()];
                     case 1:
                         result = _b.sent();
-                        groups = (_a = result.value) !== null && _a !== void 0 ? _a : [];
-                        return [2 /*return*/, groups.map(function (g) { return ({ id: g.id, name: g.displayName }); })];
+                        communities = (_a = result.value) !== null && _a !== void 0 ? _a : [];
+                        return [2 /*return*/, communities.map(function (c) { return ({ id: c.groupId, name: c.displayName }); })];
                     case 2:
                         err_1 = _b.sent();
                         msg = err_1 instanceof Error ? err_1.message : String(err_1);
@@ -68,11 +65,9 @@ var VivaEngageService = /** @class */ (function () {
                                 topic: 'AI Curator \u2013 Shared Article',
                                 posts: [
                                     {
-                                        post: {
-                                            body: {
-                                                contentType: 'html',
-                                                content: htmlContent
-                                            }
+                                        body: {
+                                            contentType: 'html',
+                                            content: htmlContent
                                         }
                                     }
                                 ]
