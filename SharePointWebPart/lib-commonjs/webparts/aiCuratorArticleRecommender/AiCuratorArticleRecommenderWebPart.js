@@ -29,6 +29,7 @@ var sp_core_library_1 = require("@microsoft/sp-core-library");
 var sp_property_pane_1 = require("@microsoft/sp-property-pane");
 var sp_webpart_base_1 = require("@microsoft/sp-webpart-base");
 var AiCuratorArticleRecommender_1 = tslib_1.__importDefault(require("./components/AiCuratorArticleRecommender"));
+var SharePointService_1 = require("./services/SharePointService");
 var strings = tslib_1.__importStar(require("AiCuratorArticleRecommenderWebPartStrings"));
 var AiCuratorArticleRecommenderWebPart = /** @class */ (function (_super) {
     tslib_1.__extends(AiCuratorArticleRecommenderWebPart, _super);
@@ -39,12 +40,26 @@ var AiCuratorArticleRecommenderWebPart = /** @class */ (function (_super) {
     }
     AiCuratorArticleRecommenderWebPart.prototype.onInit = function () {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var spService, err_1;
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, _super.prototype.onInit.call(this)];
                     case 1:
                         _a.sent();
-                        return [2 /*return*/];
+                        _a.label = 2;
+                    case 2:
+                        _a.trys.push([2, 4, , 5]);
+                        spService = new SharePointService_1.SharePointService(this.context);
+                        return [4 /*yield*/, spService.ensureSiteLists(this.properties.articlesListName || 'Articles', this.properties.userPersonalizationListName || 'UserPersonalization')];
+                    case 3:
+                        _a.sent();
+                        return [3 /*break*/, 5];
+                    case 4:
+                        err_1 = _a.sent();
+                        // Non-fatal: log and continue — lists may already exist or user may lack permissions
+                        console.warn('AI Curator: ensureSiteLists failed', err_1);
+                        return [3 /*break*/, 5];
+                    case 5: return [2 /*return*/];
                 }
             });
         });

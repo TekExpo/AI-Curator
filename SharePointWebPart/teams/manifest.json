@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "d1e2f3a4-b5c6-7890-def0-123456789abc",
+  "developer": {
+    "name": "TrnDigital",
+    "websiteUrl": "https://trndigital.com",
+    "privacyUrl": "https://trndigital.com/privacy",
+    "termsOfUseUrl": "https://trndigital.com/terms"
+  },
+  "icons": {
+    "color": "c3d4e5f6-a7b8-9012-cdef-123456789012_color.png",
+    "outline": "c3d4e5f6-a7b8-9012-cdef-123456789012_outline.png"
+  },
+  "name": {
+    "short": "AI Curator",
+    "full": "AI Curator - Article Recommender"
+  },
+  "description": {
+    "short": "AI-powered personalised article recommendations.",
+    "full": "AI Curator delivers personalised article recommendations based on your interests, lets you save articles, and share them directly to Viva Engage communities."
+  },
+  "accentColor": "#107C10",
+  "staticTabs": [
+    {
+      "entityId": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "name": "AI Curator",
+      "contentUrl": "https://{teamSiteDomain}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest={teamSitePath}/_layouts/15/teamshostedapp.aspx%3Fteams%26personal%26componentId=c3d4e5f6-a7b8-9012-cdef-123456789012%26forceLocale={locale}",
+      "websiteUrl": "https://{teamSiteDomain}{teamSitePath}",
+      "scopes": ["personal"]
+    }
+  ],
+  "configurableTabs": [
+    {
+      "configurationUrl": "https://{teamSiteDomain}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest={teamSitePath}/_layouts/15/teamshostedapp.aspx%3Fteams%26componentId=c3d4e5f6-a7b8-9012-cdef-123456789012%26forceLocale={locale}",
+      "canUpdateConfiguration": true,
+      "scopes": ["team", "groupchat"]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "*.sharepoint.com",
+    "*.sharepoint-df.com",
+    "spoppe-a.akamaihd.net",
+    "spoprod-a.akamaihd.net",
+    "resourceseng.blob.core.windows.net",
+    "msft.spoppe.com"
+  ],
+  "webApplicationInfo": {
+    "resource": "https://{teamSiteDomain}",
+    "id": "00000003-0000-0ff1-ce00-000000000000"
+  }
+}

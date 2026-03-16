@@ -183,6 +183,126 @@ var SharePointService = /** @class */ (function () {
         });
     };
     /**
+     * Checks whether a list with the given title exists on the site.
+     */
+    SharePointService.prototype.listExists = function (listName) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var url, response;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        url = "".concat(this._webUrl, "/_api/web/lists/getbytitle('").concat(encodeURIComponent(listName), "')?$select=Id");
+                        return [4 /*yield*/, this._spHttpClient.get(url, sp_http_1.SPHttpClient.configurations.v1)];
+                    case 1:
+                        response = _a.sent();
+                        return [2 /*return*/, response.ok];
+                }
+            });
+        });
+    };
+    /**
+     * Creates a SharePoint Generic list with the given title and fields.
+     * Fields: array of { FieldTypeKind, InternalName, Title }
+     */
+    SharePointService.prototype.createList = function (listName, fields) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var createUrl, createBody, createResp, errText, fieldsUrl, _i, fields_1, field, fieldBody;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        createUrl = "".concat(this._webUrl, "/_api/web/lists");
+                        createBody = JSON.stringify({
+                            Title: listName,
+                            BaseTemplate: 100,
+                            AllowContentTypes: false,
+                            ContentTypesEnabled: false
+                        });
+                        return [4 /*yield*/, this._spHttpClient.post(createUrl, sp_http_1.SPHttpClient.configurations.v1, {
+                                headers: {
+                                    Accept: 'application/json;odata=nometadata',
+                                    'Content-Type': 'application/json;odata=nometadata',
+                                    'odata-version': ''
+                                },
+                                body: createBody
+                            })];
+                    case 1:
+                        createResp = _a.sent();
+                        if (!!createResp.ok) return [3 /*break*/, 3];
+                        return [4 /*yield*/, createResp.text().catch(function () { return ''; })];
+                    case 2:
+                        errText = _a.sent();
+                        throw new Error("Failed to create list \"".concat(listName, "\": HTTP ").concat(createResp.status, " \u2014 ").concat(errText.substring(0, 200)));
+                    case 3:
+                        fieldsUrl = "".concat(this._webUrl, "/_api/web/lists/getbytitle('").concat(encodeURIComponent(listName), "')/fields");
+                        _i = 0, fields_1 = fields;
+                        _a.label = 4;
+                    case 4:
+                        if (!(_i < fields_1.length)) return [3 /*break*/, 7];
+                        field = fields_1[_i];
+                        fieldBody = JSON.stringify({
+                            Title: field.Title,
+                            FieldTypeKind: field.FieldTypeKind,
+                            InternalName: field.InternalName,
+                            StaticName: field.InternalName
+                        });
+                        return [4 /*yield*/, this._spHttpClient.post(fieldsUrl, sp_http_1.SPHttpClient.configurations.v1, {
+                                headers: {
+                                    Accept: 'application/json;odata=nometadata',
+                                    'Content-Type': 'application/json;odata=nometadata',
+                                    'odata-version': ''
+                                },
+                                body: fieldBody
+                            })];
+                    case 5:
+                        _a.sent();
+                        _a.label = 6;
+                    case 6:
+                        _i++;
+                        return [3 /*break*/, 4];
+                    case 7: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
+     * Ensures the Articles and UserPersonalization lists exist on the site.
+     * Creates them with the required columns if missing.
+     */
+    SharePointService.prototype.ensureSiteLists = function (articlesListName, userPersonalizationListName) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var _a, articlesExists, personalizationExists, tasks;
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, Promise.all([
+                            this.listExists(articlesListName),
+                            this.listExists(userPersonalizationListName)
+                        ])];
+                    case 1:
+                        _a = _b.sent(), articlesExists = _a[0], personalizationExists = _a[1];
+                        tasks = [];
+                        if (!articlesExists) {
+                            tasks.push(this.createList(articlesListName, [
+                                { InternalName: 'Keywords', Title: 'Keywords', FieldTypeKind: 2 }, // Text
+                                { InternalName: 'ArticleUrl', Title: 'Article URL', FieldTypeKind: 2 },
+                                { InternalName: 'Source', Title: 'Source', FieldTypeKind: 2 }
+                            ]));
+                        }
+                        if (!personalizationExists) {
+                            tasks.push(this.createList(userPersonalizationListName, [
+                                { InternalName: 'UserId', Title: 'UserId', FieldTypeKind: 9 }, // Number
+                                { InternalName: 'SelectedTags', Title: 'SelectedTags', FieldTypeKind: 3 }, // Note
+                                { InternalName: 'SavedLinks', Title: 'SavedLinks', FieldTypeKind: 3 } // Note
+                            ]));
+                        }
+                        return [4 /*yield*/, Promise.all(tasks)];
+                    case 2:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
      * Removes an article URL from SavedLinks (comma-separated).
      */
     SharePointService.prototype.removeSavedLink = function (listName, itemId, currentSavedLinks, urlToRemove) {

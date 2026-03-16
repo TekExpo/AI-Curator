@@ -191,6 +191,113 @@ export class SharePointService {
   }
 
   /**
+   * Checks whether a list with the given title exists on the site.
+   */
+  private async listExists(listName: string): Promise<boolean> {
+    const url = `${this._webUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')?$select=Id`;
+    const response: SPHttpClientResponse = await this._spHttpClient.get(
+      url,
+      SPHttpClient.configurations.v1
+    );
+    return response.ok;
+  }
+
+  /**
+   * Creates a SharePoint Generic list with the given title and fields.
+   * Fields: array of { FieldTypeKind, InternalName, Title }
+   */
+  private async createList(
+    listName: string,
+    fields: Array<{ InternalName: string; Title: string; FieldTypeKind: number }>
+  ): Promise<void> {
+    // 1. Create the list (100 = Generic List)
+    const createUrl = `${this._webUrl}/_api/web/lists`;
+    const createBody = JSON.stringify({
+      Title: listName,
+      BaseTemplate: 100,
+      AllowContentTypes: false,
+      ContentTypesEnabled: false
+    });
+    const createResp: SPHttpClientResponse = await this._spHttpClient.post(
+      createUrl,
+      SPHttpClient.configurations.v1,
+      {
+        headers: {
+          Accept: 'application/json;odata=nometadata',
+          'Content-Type': 'application/json;odata=nometadata',
+          'odata-version': ''
+        },
+        body: createBody
+      }
+    );
+    if (!createResp.ok) {
+      const errText = await createResp.text().catch(() => '');
+      throw new Error(`Failed to create list "${listName}": HTTP ${createResp.status} — ${errText.substring(0, 200)}`);
+    }
+
+    // 2. Add each custom field
+    const fieldsUrl = `${this._webUrl}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/fields`;
+    for (const field of fields) {
+      const fieldBody = JSON.stringify({
+        Title: field.Title,
+        FieldTypeKind: field.FieldTypeKind,
+        InternalName: field.InternalName,
+        StaticName: field.InternalName
+      });
+      await this._spHttpClient.post(
+        fieldsUrl,
+        SPHttpClient.configurations.v1,
+        {
+          headers: {
+            Accept: 'application/json;odata=nometadata',
+            'Content-Type': 'application/json;odata=nometadata',
+            'odata-version': ''
+          },
+          body: fieldBody
+        }
+      );
+    }
+  }
+
+  /**
+   * Ensures the Articles and UserPersonalization lists exist on the site.
+   * Creates them with the required columns if missing.
+   */
+  public async ensureSiteLists(
+    articlesListName: string,
+    userPersonalizationListName: string
+  ): Promise<void> {
+    const [articlesExists, personalizationExists] = await Promise.all([
+      this.listExists(articlesListName),
+      this.listExists(userPersonalizationListName)
+    ]);
+
+    const tasks: Promise<void>[] = [];
+
+    if (!articlesExists) {
+      tasks.push(
+        this.createList(articlesListName, [
+          { InternalName: 'Keywords', Title: 'Keywords', FieldTypeKind: 2 },  // Text
+          { InternalName: 'ArticleUrl', Title: 'Article URL', FieldTypeKind: 2 },
+          { InternalName: 'Source', Title: 'Source', FieldTypeKind: 2 }
+        ])
+      );
+    }
+
+    if (!personalizationExists) {
+      tasks.push(
+        this.createList(userPersonalizationListName, [
+          { InternalName: 'UserId', Title: 'UserId', FieldTypeKind: 9 },       // Number
+          { InternalName: 'SelectedTags', Title: 'SelectedTags', FieldTypeKind: 3 }, // Note
+          { InternalName: 'SavedLinks', Title: 'SavedLinks', FieldTypeKind: 3 }      // Note
+        ])
+      );
+    }
+
+    await Promise.all(tasks);
+  }
+
+  /**
    * Removes an article URL from SavedLinks (comma-separated).
    */
   public async removeSavedLink(

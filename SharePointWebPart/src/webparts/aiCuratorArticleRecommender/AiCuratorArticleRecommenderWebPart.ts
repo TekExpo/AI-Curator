@@ -33,6 +33,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
 import AiCuratorArticleRecommender from './components/AiCuratorArticleRecommender';
 import { IAiCuratorArticleRecommenderProps } from './components/IAiCuratorArticleRecommenderProps';
+import { SharePointService } from './services/SharePointService';
 import * as strings from 'AiCuratorArticleRecommenderWebPartStrings';
 
 /**
@@ -53,7 +54,16 @@ export default class AiCuratorArticleRecommenderWebPart extends BaseClientSideWe
 
   protected async onInit(): Promise<void> {
     await super.onInit();
-    return;
+    try {
+      const spService = new SharePointService(this.context);
+      await spService.ensureSiteLists(
+        this.properties.articlesListName || 'Articles',
+        this.properties.userPersonalizationListName || 'UserPersonalization'
+      );
+    } catch (err) {
+      // Non-fatal: log and continue — lists may already exist or user may lack permissions
+      console.warn('AI Curator: ensureSiteLists failed', err);
+    }
   }
 
   public render(): void {
