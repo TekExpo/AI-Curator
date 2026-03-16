@@ -1,14 +1,14 @@
 # AI Curator – Article Recommender
 
-> A SharePoint Framework (SPFx) web part that delivers **AI-powered, personalised article recommendations** directly inside Microsoft SharePoint, with one-click sharing to **Viva Engage** communities.
+> A SharePoint Framework (SPFx) web part — and **Microsoft Teams personal & channel tab** — that delivers **AI-powered, personalised article recommendations** directly inside Microsoft 365, with one-click sharing to **Viva Engage** communities and **LinkedIn**.
 
 ---
 
 ## Overview
 
-Knowledge workers are overwhelmed by information. AI Curator solves this by learning each user's interests and surfacing the most relevant articles — right inside the SharePoint intranet portal they already use every day.
+Knowledge workers are overwhelmed by information. AI Curator solves this by learning each user's interests and surfacing the most relevant articles — right inside the Microsoft 365 tools they already use every day: SharePoint and Microsoft Teams.
 
-Users select topics they care about, and the web part calls an intelligent backend API to recommend curated articles matching those interests. They can save articles for later and share them directly to Viva Engage communities — all without leaving SharePoint.
+Users select topics they care about, and the web part calls an intelligent Azure-hosted API to recommend curated articles matching those interests. They can save articles for later and share them directly to Viva Engage communities or to LinkedIn — all without leaving Microsoft 365.
 
 ---
 
@@ -39,11 +39,23 @@ Users select topics they care about, and the web part calls an intelligent backe
 - A search box powered by the `/suggest-topics` API helps users discover new topics
 
 ### 💬 Share to Viva Engage
-- Each article has a **Share** button that opens a slide-in panel
+- Each article has a **Share to Viva Engage** button that opens a slide-in panel
 - The panel pre-populates a **rich-text editor** (Quill) with the article summary
 - Users choose a **Viva Engage community** from a dropdown populated via Microsoft Graph
 - The post includes: formatted description, article hyperlink, and attribution
 - Live **post preview** shows exactly what will be posted before submitting
+
+### 🔗 Share to LinkedIn
+- Each article also has a **Share to LinkedIn** button that opens a slide-in panel
+- The panel pre-populates a rich-text description from the article summary
+- Clicking **Share on LinkedIn** opens LinkedIn's share composer pre-filled with the article title, description, and URL
+- No OAuth registration required — uses LinkedIn's standard `shareArticle` URL scheme
+
+### 🟣 Microsoft Teams App
+- Ships as a **personal tab** — pinned to the Teams sidebar for individual access
+- Ships as a **configurable channel tab** — added to any team or group chat for shared access
+- Packaged inside the same `.sppkg` via a Teams manifest — no separate app registration required
+- Full feature parity with the SharePoint web part: recommendations, saved links, interests management, and sharing
 
 ### 🎨 Polished UI
 - Built with **Fluent UI v8** — consistent with the Microsoft 365 design language
@@ -56,20 +68,23 @@ Users select topics they care about, and the web part calls an intelligent backe
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                  SharePoint Modern Page                      │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │          AI Curator SPFx Web Part (React 17)         │   │
-│  │                                                      │   │
-│  │  Tab 1: Recommended Articles                         │   │
-│  │  Tab 2: My Saved Links                               │   │
-│  │  Tab 3: My Interests                                 │   │
-│  └──────────┬───────────────┬──────────────────┬───────┘   │
-│             │               │                  │            │
-│             ▼               ▼                  ▼            │
-│    External AI API    SharePoint List    Microsoft Graph    │
-│    (Azure App Svc)   (UserPersonaliz.)   (Viva Engage)      │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│          Microsoft 365 Surface (SharePoint or Teams)             │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │            AI Curator SPFx Web Part (React 17)             │  │
+│  │                                                            │  │
+│  │  Tab 1: Recommended Articles  (default view)               │  │
+│  │  Tab 2: My Saved Links                                     │  │
+│  │  Tab 3: My Interests                                       │  │
+│  └──────────┬────────────────┬───────────────────┬───────────┘  │
+│             │                │                   │               │
+│             ▼                ▼                   ▼               │
+│    External AI API    SharePoint List     Microsoft Graph        │
+│    (Azure App Svc)   (UserPersonaliz.)    (Viva Engage)          │
+│                                                                  │
+│  Surfaces: SharePoint Modern Page · Teams Personal Tab ·        │
+│            Teams Configurable Channel Tab                        │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### External API (Azure App Service)
@@ -105,9 +120,9 @@ Users select topics they care about, and the web part calls an intelligent backe
 | Fluent UI React | 8.106.4 | Microsoft 365-consistent components |
 | TypeScript | ~5.8 | Type safety |
 | Heft | 1.1.2 | Build toolchain |
-| PnP JS (`@pnp/sp`) | ^3.25 | SharePoint REST operations |
+| SPHttpClient | (SPFx built-in) | SharePoint REST operations |
 | Microsoft Graph (MSGraphClientV3) | — | Viva Engage integration |
-| React Quill | 2.0.0 | Rich-text editor for Viva Engage posts |
+| React Quill | 2.0.0 | Rich-text editor for Viva Engage / LinkedIn posts |
 
 ---
 
@@ -203,32 +218,42 @@ Add-PnPField -List "UserPersonalization" -DisplayName "SavedLinks"   -InternalNa
 |---|---|---|
 | Articles List Name | `Articles` | Display name of the articles reference list |
 | User Personalization List | `UserPersonalization` | List storing user interests and saved links |
-| Enable Viva Engage sharing | `false` | Toggle the Share button on article cards |
-| Yammer Client ID | _(empty)_ | Optional — Yammer app client ID if required |
+| Articles Limit | `10` | Maximum number of articles to fetch per request (1–20) |
 
 ---
 
 ## Project Structure
 
 ```
-SharePointWebPart/
-└── src/webparts/aiCuratorArticleRecommender/
-    ├── AiCuratorArticleRecommenderWebPart.ts   # Web part entry point & property pane
-    ├── components/
-    │   ├── AiCuratorArticleRecommender.tsx     # Root component — 3-tab Pivot
-    │   ├── AiCuratorArticleRecommender.module.scss
-    │   ├── ArticleList/
-    │   │   ├── ArticleList.tsx                 # Tab 1: article grid
-    │   │   └── ArticleCard.tsx                 # Individual article card
-    │   ├── TagSelector/
-    │   │   └── TagSelector.tsx                 # Tab 3: interests management
-    │   └── SharePanel/
-    │       ├── SharePanel.tsx                  # Viva Engage share panel
-    │       └── ISharePanelProps.ts
-    └── services/
-        ├── TopicsService.ts                    # External AI API calls
-        ├── SharePointService.ts                # SharePoint list operations (PnP)
-        └── VivaEngageService.ts                # Microsoft Graph / Viva Engage
+AI-Curator/
+├── backend/                                    # Azure App Service — FastAPI AI backend
+│   ├── main.py                                 # /suggest-topics and /articles endpoints
+│   ├── summarizer.py                           # Azure OpenAI / OpenAI summarisation
+│   ├── content_fetcher.py                      # Web content fetching
+│   └── requirements.txt
+└── SharePointWebPart/
+    ├── teams/
+    │   └── manifest.json                       # Teams personal + channel tab manifest
+    └── src/webparts/aiCuratorArticleRecommender/
+        ├── AiCuratorArticleRecommenderWebPart.ts   # Web part entry point & property pane
+        ├── components/
+        │   ├── AiCuratorArticleRecommender.tsx     # Root component — 3-tab Pivot
+        │   ├── AiCuratorArticleRecommender.module.scss
+        │   ├── ArticleList/
+        │   │   ├── ArticleList.tsx                 # Recommended Articles tab — article grid
+        │   │   └── ArticleCard.tsx                 # Individual article card (save + share actions)
+        │   ├── TagSelector/
+        │   │   └── TagSelector.tsx                 # My Interests tab — AI topic selector
+        │   ├── SharePanel/
+        │   │   ├── SharePanel.tsx                  # Viva Engage share panel (rich-text + preview)
+        │   │   └── ISharePanelProps.ts
+        │   └── LinkedInPanel/
+        │       ├── LinkedInPanel.tsx               # LinkedIn share panel
+        │       └── ILinkedInPanelProps.ts
+        └── services/
+            ├── TopicsService.ts                    # External AI API calls (/suggest-topics, /articles)
+            ├── SharePointService.ts                # SharePoint list operations (SPHttpClient)
+            └── VivaEngageService.ts                # Microsoft Graph / Viva Engage
 ```
 
 ---
@@ -238,16 +263,17 @@ SharePointWebPart/
 1. **On load** — the web part fetches article recommendations based on the current user's saved topics
 2. **My Interests tab** — the user types a keyword; the `/suggest-topics` API returns matching topics in real time; the user selects topics and saves them
 3. **Recommended Articles tab** — calls `/articles?topics=<saved-tags>` and renders ranked article cards with summary, source, and date
-4. **Save** — clicking the bookmark icon appends the article URL to `UserPersonalization.SavedLinks` via PnP JS
-5. **Share** — clicking the share icon opens a panel; Microsoft Graph fetches the user's Viva Engage communities; the user edits a rich-text description (pre-filled from the article summary) and posts to the selected community
-6. **My Saved Links tab** — reads `SavedLinks` from the user's personalization record and renders them with a delete button
+4. **Save** — clicking the bookmark icon appends the article URL to `UserPersonalization.SavedLinks` via SPHttpClient
+5. **Share to Viva Engage** — clicking the Viva Engage share icon opens a panel; Microsoft Graph fetches the user's Viva Engage communities; the user edits a rich-text description (pre-filled from the article summary) and posts to the selected community
+6. **Share to LinkedIn** — clicking the LinkedIn share icon opens a panel; the user edits the pre-filled description, then clicks **Share on LinkedIn** to open LinkedIn's share composer in a new tab
+7. **My Saved Links tab** — reads `SavedLinks` from the user's personalization record and renders them with a delete button
 
 ---
 
 ## Security
 
 - **No API keys stored in the web part** — all AI processing is performed server-side by the external Azure-hosted API
-- SharePoint permissions use **PnP JS with the web part context** — no elevated permissions
+- SharePoint permissions use **SPHttpClient with the web part context** — no elevated permissions
 - Microsoft Graph calls use **delegated permissions** — the web part acts as the signed-in user
 - Viva Engage post HTML is **sanitised** — article URLs are HTML-escaped before insertion
 
@@ -257,12 +283,14 @@ SharePointWebPart/
 
 This project demonstrates:
 
-- ✅ **AI integration** — live topic suggestions and article recommendations via an Azure-hosted AI API
+- ✅ **AI integration** — live topic suggestions and article recommendations via an Azure-hosted AI API (Azure OpenAI)
 - ✅ **Microsoft 365 integration** — SharePoint lists for personalisation, Viva Engage for social sharing
+- ✅ **Microsoft Teams app** — personal tab and configurable channel tab packaged in the same `.sppkg`
 - ✅ **Microsoft Graph API** — community discovery and posting via MSGraphClientV3
+- ✅ **LinkedIn sharing** — one-click sharing to professional communities via LinkedIn's `shareArticle` URL scheme
 - ✅ **Modern SPFx patterns** — SPFx 1.22.1, Heft build toolchain, React 17, Fluent UI v8
-- ✅ **Rich user experience** — three-tab layout, rich-text editor, live previews, responsive design
-- ✅ **Production ready** — deployed as a tenant-wide `.sppkg`, proper Graph permission declarations
+- ✅ **Rich user experience** — three-tab layout, rich-text editor, live post preview, responsive design
+- ✅ **Production ready** — deployed as a tenant-wide `.sppkg`, proper Graph permission declarations, no API keys in the front end
 
 ---
 

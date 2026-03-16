@@ -6,7 +6,7 @@ A production-ready SharePoint Framework (SPFx) web part with AI-powered article 
 
 - **Tag-Based Personalization** – Users select interest tags from the Articles list on the "My Interests" tab and save them to their personal record in SharePoint.
 - **AI-Powered Recommendations** – Saved tags are sent to the AI Curator API to fetch tailored article recommendations on the "Recommended Articles" tab.
-- **Save & Share Articles** – Each recommendation can be bookmarked to the user's saved links, or shared to a Viva Engage (Yammer) group directly from the web part.
+- **Save & Share Articles** – Each recommendation can be bookmarked to the user's saved links, shared to a Viva Engage (Yammer) group, or shared to LinkedIn directly from the web part.
 - **Configurable via Property Pane** – List names and Viva Engage settings are editable without code changes.
 - **Responsive & Accessible** – Built with Fluent UI v8 React components. Supports dark/light themes and Teams contexts.
 - **Session Caching** – Optional sessionStorage caching with 15-minute TTL to reduce redundant API calls.
@@ -83,8 +83,8 @@ This opens the SharePoint hosted workbench. Set the workbench URL in `config/ser
 
 ```bash
 npx heft build --production
-npm run bundle -- --ship
-npm run package-solution -- --ship
+npm run bundle
+npm run package-solution
 ```
 
 The packaged solution is output to:  
@@ -166,9 +166,12 @@ SharePointWebPart/
 │           │   │   ├── ArticleList.tsx           # Tab 2 article list wrapper
 │           │   │   ├── ArticleCard.tsx           # Individual article card (save/share)
 │           │   │   └── IArticleListProps.ts
-│           │   └── SharePanel/
-│           │       ├── SharePanel.tsx            # Fluent UI Panel for Viva Engage sharing
-│           │       └── ISharePanelProps.ts
+│           │   ├── SharePanel/
+│           │   │   ├── SharePanel.tsx            # Fluent UI Panel for Viva Engage sharing
+│           │   │   └── ISharePanelProps.ts
+│           │   └── LinkedInPanel/
+│           │       ├── LinkedInPanel.tsx         # Fluent UI Panel for LinkedIn sharing
+│           │       └── ILinkedInPanelProps.ts
 │           ├── services/
 │           │   ├── SharePointService.ts          # SPHttpClient-based SP REST calls
 │           │   ├── TopicsService.ts              # AI Curator API calls + caching
@@ -191,8 +194,8 @@ SharePointWebPart/
 | `npm start`                           | Serve with hot reload (hosted workbench) |
 | `npx heft build`                      | Development build                        |
 | `npx heft build --production`         | Production build (minified)              |
-| `npm run bundle -- --ship`            | Bundle for packaging                     |
-| `npm run package-solution -- --ship`  | Create `.sppkg` file                     |
+| `npm run bundle`                      | Bundle for packaging (production)        |
+| `npm run package-solution`            | Create `.sppkg` file                     |
 
 ---
 

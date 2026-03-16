@@ -12,6 +12,5 @@ temp
 *.csproj
 .git*
 .yo-rc.json
-gulpfile.js
 tsconfig.json
 tslint.json
