@@ -50,17 +50,33 @@ var LinkedInPanel = function (props) {
     var isOpen = props.isOpen, articleUrl = props.articleUrl, articleTitle = props.articleTitle, articleSummary = props.articleSummary, onDismiss = props.onDismiss;
     var _a = (0, react_1.useState)(''), description = _a[0], setDescription = _a[1];
     var _b = (0, react_1.useState)(false), isSharing = _b[0], setIsSharing = _b[1];
+    var _c = (0, react_1.useState)(false), copied = _c[0], setCopied = _c[1];
     // Reset and pre-populate whenever the panel opens
     (0, react_1.useEffect)(function () {
         if (isOpen) {
             setDescription((articleSummary === null || articleSummary === void 0 ? void 0 : articleSummary.trim()) ? summaryToHtml(articleSummary.trim()) : '');
             setIsSharing(false);
+            setCopied(false);
         }
     }, [isOpen]);
     var handleDismiss = function () {
         setDescription('');
         setIsSharing(false);
+        setCopied(false);
         onDismiss();
+    };
+    var handleCopyToClipboard = function () {
+        var plainText = [
+            htmlToPlainText(description),
+            articleUrl,
+            'Shared via AI Curator \u2013 Article Recommender'
+        ].filter(Boolean).join('\n\n');
+        if (navigator.clipboard && plainText) {
+            navigator.clipboard.writeText(plainText).then(function () {
+                setCopied(true);
+                setTimeout(function () { return setCopied(false); }, 2000);
+            }).catch(function () { });
+        }
     };
     var handleShare = function () {
         setIsSharing(true);
@@ -115,7 +131,9 @@ var LinkedInPanel = function (props) {
                     backgroundColor: '#f9f9f9',
                     border: '1px solid #edebe9'
                 } },
-                React.createElement(react_2.Text, { variant: "tiny", style: { color: '#605e5c', fontWeight: 600, marginBottom: 6 } }, "Post preview"),
+                React.createElement(react_2.Stack, { horizontal: true, horizontalAlign: "space-between", verticalAlign: "center", style: { marginBottom: 6 } },
+                    React.createElement(react_2.Text, { variant: "tiny", style: { color: '#605e5c', fontWeight: 600 } }, "Post preview"),
+                    React.createElement(react_2.Link, { onClick: handleCopyToClipboard, style: { fontSize: 12, color: copied ? '#107C10' : LINKEDIN_BLUE } }, copied ? '✓ Copied!' : 'Copy to clipboard')),
                 React.createElement("div", { dangerouslySetInnerHTML: { __html: previewHtml }, style: { fontSize: 14, color: '#323130', lineHeight: '1.6', wordBreak: 'break-word' } })))));
 };
 exports.default = LinkedInPanel;

@@ -449,7 +449,7 @@ var AiCuratorArticleRecommender = function (props) {
                     }
                 } },
                 React.createElement(react_2.PivotItem, { headerText: "Recommended Articles", itemKey: TAB_ARTICLES, itemIcon: "Lightbulb" },
-                    React.createElement(ArticleList_1.default, { articles: state.articles, isLoading: state.isLoadingArticles, errorMessage: state.tab2Error, infoMessage: state.tab2Info, savedArticleUrls: savedArticleUrls, onSaveArticle: handleSaveArticle, onShareArticle: handleShareArticle, onLinkedInShareArticle: handleLinkedInShareArticle, vivaEngageEnabled: vivaEngageEnabled })),
+                    React.createElement(ArticleList_1.default, { articles: state.articles, isLoading: state.isLoadingArticles, errorMessage: state.tab2Error, infoMessage: state.tab2Info, savedArticleUrls: savedArticleUrls, onSaveArticle: handleSaveArticle, onShareArticle: handleShareArticle, onLinkedInShareArticle: handleLinkedInShareArticle, onReload: function () { void loadTab2Data(); }, vivaEngageEnabled: vivaEngageEnabled })),
                 React.createElement(react_2.PivotItem, { headerText: "My Saved Links", itemKey: TAB_SAVED, itemIcon: "FavoriteStar" },
                     tab3Error && (React.createElement(react_2.MessageBar, { messageBarType: react_2.MessageBarType.error, isMultiline: true, onDismiss: function () { return setTab3Error(''); }, style: { marginTop: 8, marginBottom: 4 } }, tab3Error)),
                     isLoadingSavedLinks ? (React.createElement(react_2.Stack, { horizontalAlign: "center", style: { padding: 40 } },

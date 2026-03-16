@@ -476,6 +476,7 @@ const AiCuratorArticleRecommender: React.FC<IAiCuratorArticleRecommenderProps> =
               onSaveArticle={handleSaveArticle}
               onShareArticle={handleShareArticle}
               onLinkedInShareArticle={handleLinkedInShareArticle}
+              onReload={() => { void loadTab2Data(); }}
               vivaEngageEnabled={vivaEngageEnabled}
             />
           </PivotItem>

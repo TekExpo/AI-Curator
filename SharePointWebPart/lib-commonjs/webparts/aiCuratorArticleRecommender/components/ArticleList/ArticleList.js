@@ -9,12 +9,14 @@ var ArticleCard_1 = tslib_1.__importDefault(require("./ArticleCard"));
  * Renders the AI-powered article recommendation list.
  */
 var ArticleList = function (props) {
-    var articles = props.articles, isLoading = props.isLoading, errorMessage = props.errorMessage, infoMessage = props.infoMessage, savedArticleUrls = props.savedArticleUrls, onSaveArticle = props.onSaveArticle, onShareArticle = props.onShareArticle, onLinkedInShareArticle = props.onLinkedInShareArticle, vivaEngageEnabled = props.vivaEngageEnabled;
+    var articles = props.articles, isLoading = props.isLoading, errorMessage = props.errorMessage, infoMessage = props.infoMessage, savedArticleUrls = props.savedArticleUrls, onSaveArticle = props.onSaveArticle, onShareArticle = props.onShareArticle, onLinkedInShareArticle = props.onLinkedInShareArticle, onReload = props.onReload, vivaEngageEnabled = props.vivaEngageEnabled;
     if (isLoading) {
         return (React.createElement(react_1.Stack, { horizontalAlign: "center", verticalAlign: "center", style: { minHeight: 200, padding: 40 } },
             React.createElement(react_1.Spinner, { size: react_1.SpinnerSize.large, label: "Fetching article recommendations\u2026", labelPosition: "bottom" })));
     }
     return (React.createElement(react_1.Stack, { tokens: { childrenGap: 12 }, style: { padding: '8px 0' } },
+        React.createElement(react_1.Stack, { horizontal: true, horizontalAlign: "end" },
+            React.createElement(react_1.ActionButton, { iconProps: { iconName: 'Refresh' }, onClick: onReload, disabled: isLoading, ariaLabel: "Reload recommendations", styles: { root: { color: '#605e5c' }, rootHovered: { color: '#107C10' } } }, "Reload")),
         errorMessage && (React.createElement(react_1.MessageBar, { messageBarType: react_1.MessageBarType.error, isMultiline: true }, errorMessage)),
         infoMessage && !errorMessage && (React.createElement(react_1.MessageBar, { messageBarType: react_1.MessageBarType.info, isMultiline: true }, infoMessage)),
         !isLoading && !errorMessage && !infoMessage && articles.length === 0 && (React.createElement(react_1.MessageBar, { messageBarType: react_1.MessageBarType.info }, "No article recommendations were returned. Try updating your interests in the My Interests tab.")),

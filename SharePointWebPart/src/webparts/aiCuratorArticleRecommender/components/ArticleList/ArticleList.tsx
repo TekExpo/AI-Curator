@@ -5,7 +5,8 @@ import {
   Spinner,
   SpinnerSize,
   MessageBar,
-  MessageBarType
+  MessageBarType,
+  ActionButton
 } from '@fluentui/react';
 import ArticleCard from './ArticleCard';
 import { IArticleListProps } from './IArticleListProps';
@@ -24,6 +25,7 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
     onSaveArticle,
     onShareArticle,
     onLinkedInShareArticle,
+    onReload,
     vivaEngageEnabled
   } = props;
 
@@ -45,6 +47,18 @@ const ArticleList: React.FC<IArticleListProps> = (props) => {
 
   return (
     <Stack tokens={{ childrenGap: 12 }} style={{ padding: '8px 0' }}>
+      {/* Toolbar row */}
+      <Stack horizontal horizontalAlign="end">
+        <ActionButton
+          iconProps={{ iconName: 'Refresh' }}
+          onClick={onReload}
+          disabled={isLoading}
+          ariaLabel="Reload recommendations"
+          styles={{ root: { color: '#605e5c' }, rootHovered: { color: '#107C10' } }}
+        >
+          Reload
+        </ActionButton>
+      </Stack>
       {errorMessage && (
         <MessageBar messageBarType={MessageBarType.error} isMultiline>
           {errorMessage}

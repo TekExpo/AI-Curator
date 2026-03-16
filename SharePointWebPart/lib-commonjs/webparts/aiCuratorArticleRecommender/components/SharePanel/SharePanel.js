@@ -36,6 +36,10 @@ var summaryToHtml = function (text) {
         .map(function (line) { return "<p>".concat(escapeHtml(line) || '<br>', "</p>"); })
         .join('');
 };
+/** Strip HTML tags and return plain text (for clipboard copy) */
+var htmlToPlainText = function (html) {
+    return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+};
 /**
  * Slide-in panel for sharing an article to a Viva Engage group.
  */
@@ -46,6 +50,7 @@ var SharePanel = function (props) {
     var _c = (0, react_1.useState)(false), isPosting = _c[0], setIsPosting = _c[1];
     var _d = (0, react_1.useState)(''), errorMessage = _d[0], setErrorMessage = _d[1];
     var _f = (0, react_1.useState)(''), successMessage = _f[0], setSuccessMessage = _f[1];
+    var _g = (0, react_1.useState)(false), copied = _g[0], setCopied = _g[1];
     // Reset and pre-populate whenever the panel opens
     (0, react_1.useEffect)(function () {
         if (isOpen) {
@@ -54,6 +59,7 @@ var SharePanel = function (props) {
             setErrorMessage('');
             setSuccessMessage('');
             setIsPosting(false);
+            setCopied(false);
         }
     }, [isOpen]);
     var handleDismiss = function () {
@@ -61,7 +67,21 @@ var SharePanel = function (props) {
         setDescription('');
         setErrorMessage('');
         setSuccessMessage('');
+        setCopied(false);
         onDismiss();
+    };
+    var handleCopyToClipboard = function () {
+        var plainText = [
+            htmlToPlainText(description),
+            articleUrl,
+            'Shared via AI Curator \u2013 Article Recommender'
+        ].filter(Boolean).join('\n\n');
+        if (navigator.clipboard && plainText) {
+            navigator.clipboard.writeText(plainText).then(function () {
+                setCopied(true);
+                setTimeout(function () { return setCopied(false); }, 2000);
+            }).catch(function () { });
+        }
     };
     var handlePost = function () { return tslib_1.__awaiter(void 0, void 0, void 0, function () {
         var descText, err_1, msg;
@@ -145,7 +165,9 @@ var SharePanel = function (props) {
                     backgroundColor: '#f9f9f9',
                     border: '1px solid #edebe9'
                 } },
-                React.createElement(react_2.Text, { variant: "tiny", style: { color: '#605e5c', fontWeight: 600, marginBottom: 6 } }, "Post preview"),
+                React.createElement(react_2.Stack, { horizontal: true, horizontalAlign: "space-between", verticalAlign: "center", style: { marginBottom: 6 } },
+                    React.createElement(react_2.Text, { variant: "tiny", style: { color: '#605e5c', fontWeight: 600 } }, "Post preview"),
+                    React.createElement(react_2.Link, { onClick: handleCopyToClipboard, style: { fontSize: 12, color: copied ? '#107C10' : '#605e5c' } }, copied ? '✓ Copied!' : 'Copy to clipboard')),
                 React.createElement("div", { dangerouslySetInnerHTML: { __html: previewHtml }, style: { fontSize: 14, color: '#323130', lineHeight: '1.6', wordBreak: 'break-word' } })),
             errorMessage && (React.createElement(react_2.MessageBar, { messageBarType: react_2.MessageBarType.error, isMultiline: true, onDismiss: function () { return setErrorMessage(''); } }, errorMessage)),
             successMessage && (React.createElement(react_2.MessageBar, { messageBarType: react_2.MessageBarType.success, isMultiline: true }, successMessage)))));

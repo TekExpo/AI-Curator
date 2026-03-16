@@ -53,6 +53,10 @@ const summaryToHtml = (text: string): string => {
     .join('');
 };
 
+/** Strip HTML tags and return plain text (for clipboard copy) */
+const htmlToPlainText = (html: string): string =>
+  html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+
 /**
  * Slide-in panel for sharing an article to a Viva Engage group.
  */
@@ -75,6 +79,7 @@ const SharePanel: React.FC<ISharePanelProps> = (props) => {
   const [isPosting, setIsPosting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // Reset and pre-populate whenever the panel opens
   useEffect(() => {
@@ -84,6 +89,7 @@ const SharePanel: React.FC<ISharePanelProps> = (props) => {
       setErrorMessage('');
       setSuccessMessage('');
       setIsPosting(false);
+      setCopied(false);
     }
   }, [isOpen]);
 
@@ -92,9 +98,23 @@ const SharePanel: React.FC<ISharePanelProps> = (props) => {
     setDescription('');
     setErrorMessage('');
     setSuccessMessage('');
+    setCopied(false);
     onDismiss();
   };
 
+  const handleCopyToClipboard = (): void => {
+    const plainText = [
+      htmlToPlainText(description),
+      articleUrl,
+      'Shared via AI Curator \u2013 Article Recommender'
+    ].filter(Boolean).join('\n\n');
+    if (navigator.clipboard && plainText) {
+      navigator.clipboard.writeText(plainText).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => { /* non-fatal */ });
+    }
+  };
   const handlePost = async (): Promise<void> => {
     if (!selectedGroupId) {
       setErrorMessage('Please select a Viva Engage community.');
@@ -249,9 +269,15 @@ const SharePanel: React.FC<ISharePanelProps> = (props) => {
             border: '1px solid #edebe9'
           }}
         >
-          <Text variant="tiny" style={{ color: '#605e5c', fontWeight: 600, marginBottom: 6 }}>
-            Post preview
-          </Text>
+          <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 6 }}>
+            <Text variant="tiny" style={{ color: '#605e5c', fontWeight: 600 }}>Post preview</Text>
+            <Link
+              onClick={handleCopyToClipboard}
+              style={{ fontSize: 12, color: copied ? '#107C10' : '#605e5c' }}
+            >
+              {copied ? '✓ Copied!' : 'Copy to clipboard'}
+            </Link>
+          </Stack>
           {/* Quill output is sanitised. articleUrl is escaped before insertion. */}
           <div
             dangerouslySetInnerHTML={{ __html: previewHtml }}

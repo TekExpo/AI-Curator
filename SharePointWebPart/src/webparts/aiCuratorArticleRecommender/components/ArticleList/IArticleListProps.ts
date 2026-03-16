@@ -13,6 +13,8 @@ export interface IArticleListProps {
   onShareArticle: (article: IArticle) => void;
   /** Called when user clicks Share on LinkedIn on an article card */
   onLinkedInShareArticle: (article: IArticle) => void;
+  /** Called when user clicks the Reload button to refresh recommendations */
+  onReload: () => void;
   /** Whether Viva Engage sharing is enabled */
   vivaEngageEnabled: boolean;
 }
