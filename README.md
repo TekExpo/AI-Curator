@@ -93,6 +93,16 @@ Users select topics they care about, and the web part calls an intelligent Azure
 | `GET /suggest-topics?query=` | Live topic suggestions as the user types |
 | `GET /articles?topics=&limit=` | AI-ranked article recommendations |
 
+### SharePoint List: `Articles`
+| Column | Type | Purpose |
+|---|---|---|
+| `Title` | Text | Article title (default list column) |
+| `Keywords` | Text | Comma-separated keywords / topics |
+| `Article URL` | Text | Full URL of the article |
+| `Source` | Text | Publication or source name |
+
+> **Auto-created:** The web part calls `ensureSiteLists` on first load and creates both lists automatically if they do not exist. Manual setup is only needed when the web part context lacks list-creation permissions.
+
 ### SharePoint List: `UserPersonalization`
 | Column | Type | Purpose |
 |---|---|---|
@@ -131,7 +141,7 @@ Users select topics they care about, and the web part calls an intelligent Azure
 - **Node.js** 18.17.1 (use nvm to switch: `nvm use 18`)
 - **SharePoint Online** tenant with modern pages
 - **SharePoint Administrator** role (to deploy the `.sppkg` and approve Graph permissions)
-- The `UserPersonalization` list created on the target site (see setup below)
+- The `Articles` and `UserPersonalization` lists on the target site (auto-created on first load, or see manual setup below)
 
 ---
 
@@ -188,13 +198,22 @@ SharePointWebPart/sharepoint/solution/ai-curator-article-recommender.sppkg
    - `Microsoft Graph – GroupMember.Read.All`
    - `Microsoft Graph – ChannelMessage.Send`
 
-### Step 4 — Create the UserPersonalization list
+### Step 4 — Create the SharePoint lists
 
-Run the following PnP PowerShell commands on the target site:
+> **Auto-creation:** The web part attempts to create both lists automatically on first load via `ensureSiteLists`. If the signed-in user has list-creation permissions on the site, no manual steps are needed — skip to Step 5.
+>
+> If you prefer to create the lists manually, or the web part context lacks permissions, run the following PnP PowerShell commands:
 
 ```powershell
 Connect-PnPOnline -Url "https://<tenant>.sharepoint.com/sites/<site>" -Interactive
 
+# Articles list
+New-PnPList -Title "Articles" -Template GenericList
+Add-PnPField -List "Articles" -DisplayName "Keywords"    -InternalName "Keywords"    -Type Text
+Add-PnPField -List "Articles" -DisplayName "Article URL" -InternalName "ArticleUrl"  -Type Text
+Add-PnPField -List "Articles" -DisplayName "Source"      -InternalName "Source"      -Type Text
+
+# UserPersonalization list
 New-PnPList -Title "UserPersonalization" -Template GenericList
 Add-PnPField -List "UserPersonalization" -DisplayName "UserId"       -InternalName "UserId"       -Type Number
 Add-PnPField -List "UserPersonalization" -DisplayName "LoginName"    -InternalName "LoginName"    -Type Text
